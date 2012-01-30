@@ -1,0 +1,9 @@
+digraph test {
+
+  main [shape=rectangle]
+  test1 [shape=ellipse]
+  test2 [shape=ellipse]
+  main -> test1 [label="1 calls" fontsize="10"]
+  main -> test2 [label="1 calls" fontsize="10"]
+
+}
