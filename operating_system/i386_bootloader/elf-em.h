@@ -1,7 +1,7 @@
-#ifndef __MIMOSA_ELF_EM_H
-#define __MIMOSA_ELF_EM_H
+#ifndef __ELF_EM_H
+#define __ELF_EM_H
 /*	
- *  Copyright (C) 2010-2011  
+ *  Copyright (C) 2012
  *	"Mu Lei" known as "NalaGinrut" <NalaGinrut@gmail.com>
  
  *  This program is free software: you can redistribute it and/or modify
@@ -71,4 +71,4 @@
 #define EM_CYGNUS_MN10300 0xbeef
 
 
-#endif // End of __MIMOSA_ELF_EM_H;
+#endif // End of __ELF_EM_H;
