@@ -442,15 +442,15 @@ Function.prototype.inheritsFrom = function(parent){
 } 
 /* -------------------- */
 
-function $(element) {
-    return document.getElementById(element);
+function $(id) {
+    return document.getElementById(id);
 }
 
-var $F = function(element) {
+function $F(element) {
     element = $(element);
     var method = element.tagName.toLowerCase();
     return Utils.Serializers[method](element);
-  }
+}	
 
 function $A(iterable) {
   if (!iterable) return [];
@@ -496,8 +496,9 @@ String.prototype.gsub = function(pattern ,replacement) {
 
 /* ---------String-------- */
 
-Object.prototype.update = function () {
-    return __method.apply(null, [this].concat($A(arguments)));
+Object.prototype.updateHTML = function(content) {
+    this.innerHTML = content;
+    return this;
 }
 
 function $A(iterable) {
@@ -506,13 +507,6 @@ function $A(iterable) {
   var length = iterable.length || 0, results = new Array(length);
   while (length--) results[length] = iterable[length];
   return results;
-}
-
-Object.prototype.update = function(object) {
-    return new HashTable(object).inject(this, function(result, pair) {
-	    result.set(pair.key, pair.value);
-	    return result;
-	});
 }
 
 Object.prototype._each = function(iterator) {
@@ -557,6 +551,14 @@ Object.prototype.inject = function(memo ,iterator ,context) {
     return memo;
 }
 
+Object.prototype.bind = function() {
+    if (arguments.length < 2 && Object.isUndefined(arguments[0]))
+	return this;
+    var args = $A(arguments) ,obj = args.shift();
+    return this.apply(obj ,args.concat(args));
+}
+
+
 Object.prototype.each = function(iterator ,context) {
     var index = 0;
     iterator = iterator.bind(context);
@@ -578,6 +580,10 @@ Object.prototype.uniq = function(sorted) {
 	    return array;
 	});
 }
+
+Object.prototype.toHTML = function(object) {
+    return object && object.toHTML ? object.toHTML() : String.interpret(object);
+}	
 
 Object.extend = function(dest ,src) {
     for (var property in src)
@@ -614,3 +620,5 @@ Element.prototype.addClassName = function(element ,className) {
 	element.className += (element.className ? ' ' : '') + className;
     return element;
 }
+
+

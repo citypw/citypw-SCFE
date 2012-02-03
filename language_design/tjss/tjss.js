@@ -1139,9 +1139,8 @@ Interpreter.prototype.setline = function(line) {
     $(Document.INPUT).value = line;
 }
 
-Interpreter.prototype.updateprefix = function(prefix) {
-    prefix = prefix === undefined ? this.prefix : prefix;
-    $(Document.PREFIX).update(prefix);
+Interpreter.prototype.updateprefix = function() {
+    $(Document.PREFIX).updateHTML(this.prefix);
 }
 
 Interpreter.prototype.getbuff = function() {
@@ -1168,21 +1167,24 @@ Interpreter.prototype.newline = function() {
     this.buffln = undefined;
 }
 
+Interpreter.prototype.lineUpdate = function() {
+    this.lineno++;
+    this.histid = 0;
+    this.history.push(REPL.getline());
+    this.histline = '';
+    this.histprog = false;
+    this.expr += Tokens.NEWLINE + REPL.getline();
+}
+
 function jscm_repl() {
     if (REPL.expr.length == 0 && REPL.getline().strip().length == 0) {
 	jscm_printElement();
     } else {
-	REPL.lineno++;
-	REPL.histid = 0;
-	REPL.history.push(REPL.getline());
-	REPL.histline = '';
-	REPL.histprog = false;
-	REPL.expr += Tokens.NEWLINE + REPL.getline();
+	REPL.lineUpdate();
 	var scm = undefined;
 	try {
 	    scm = REPL.parser.parse(REPL.expr);
 	} catch (e) {
-	    alert(e);
 	    if (e.isIgnorable()) {
 		REPL.prefix = REPL.CONTINUE_PREFIX;
 		var prefix = REPL.lineno == 1 ? REPL.DEFAULT_PREFIX : REPL.prefix;
@@ -1208,6 +1210,7 @@ function jscm_repl() {
 	}
 	REPL.reset();
     }
+    
     return false;
 };
 
@@ -1259,11 +1262,11 @@ function jscm_print(obj) {
     }
 }
 
-function jscm_printElement(element, prefix) {
+function jscm_printElement(element ,prefix) {
     prefix = prefix === undefined ? REPL.prefix : prefix;
     var div = document.createElement('div');
     var pre = document.createElement('span');
-    pre.update(prefix);
+    pre.updateHTML(prefix);
     var expr = document.createElement('pre');
     expr.addClassName(Document.INPUT);
     expr.appendChild(document.createTextNode(REPL.getline()));
@@ -1306,14 +1309,14 @@ function jscm_printHelp(args) {
     var div = document.createElement('div');
     div.addClassName('help');
     if (args.length == 0) {
-	div.update(jscm_getHelp());
+	div.updateHTML(jscm_getHelp());
     } else if (args.length == 1)  {
 	var arg = args[0];
 	if (!arg.doc && JSCMLibs.get(arg)) {
 	    arg = JSCMLibs.get(arg);
 	}
 	if (arg.doc) {
-	    div.update(jscm_getBuiltinHelp(arg));
+	    div.updateHTML(jscm_getBuiltinHelp(arg));
 	}
     }
     $(Document.CONSOLE).appendChild(div);
@@ -1325,7 +1328,7 @@ function jscm_printToggleBox(title, html) {
     REPL.helpid++;
     var div = document.createElement('div');
     div.addClassName('help');
-    div.update('<h1><span>' + title + '</span> ' +
+    div.updateHTML('<h1><span>' + title + '</span> ' +
 	       jscm_getToggleLinkFor('helpBody' ,'helpMin') + '</h1>' +
 	       '<div class="helpBody"><div id="helpBody' + REPL.helpid + '">' +
 	       html + '</div>');
@@ -1376,7 +1379,7 @@ function jscm_printBuiltinsHelp() {
     REPL.helpid++;
     var div = document.createElement('div');
     div.addClassName('help');
-    div.update(jscm_getBuiltinsHTML());
+    div.updateHTML(jscm_getBuiltinsHTML());
     $(Document.CONSOLE).appendChild(div);
     window.scrollTo(0, document.body.scrollHeight);
 }
@@ -1498,3 +1501,4 @@ window.onload = function() {
     $(Document.INPUT).onkeydown = jscm_onkeydown;
     REPL.focus();
 };
+
