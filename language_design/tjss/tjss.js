@@ -1169,7 +1169,6 @@ Interpreter.prototype.newline = function() {
 }
 
 function jscm_repl() {
-    alert("jscm_repl()");
     if (REPL.expr.length == 0 && REPL.getline().strip().length == 0) {
 	jscm_printElement();
     } else {
@@ -1213,9 +1212,7 @@ function jscm_repl() {
 };
 
 function jscm_eval(expr ,env) {
-    alert("jscm_eval("+expr+" ,"+env+")");
     var action = jscm_expressionToAction(expr);
-    alert("action is "+action);
     if (typeof action == 'function') {
 	return action(expr ,env);
     } else {
@@ -1240,7 +1237,6 @@ function jscm_evlis(arglis ,env) {
 }
 
 function jscm_expressionToAction(expr) {
-    alert("jscm_expressionToAction)"+expr+")");
     if (Utils.isAtom(expr)) {
 	expr = expr.toLowerCase();
 	if (Utils.isNumber(expr) || Utils.isString(expr)) {
