@@ -41,7 +41,7 @@ function IllegalArgumentCountError(func ,how ,req ,cnt) {
 				' argument' + (req == 1 ? '.' : 's.'));
 }
 
-var IllegalArgumentTypeError = function(func, arg, cnt) {
+function IllegalArgumentTypeError(func ,arg ,cnt) {
     return IllegalArgumentError('The object ' + Util.format(arg) + ', passed as '+
 				'argument ' + cnt + ' to ' + 
 				func + ', is not the correct type.');

@@ -45,43 +45,12 @@ function jscm_registerLib(name ,lib) {
     JSCMLibs.set(name ,lib);
 }
 
-function Lexer(expr) {
-    if (expr === undefined)
-	return this.constructor;
-    
+
+function Lexer(expr) {}
+
+Lexer.prototype.tokenize = function(expr) {
     var tokens = [];
     var open = 0;
-
-    this.nextToken = function(expr) {
-	if (expr[0] == Tokens.L_PAREN || expr[0] == Tokens.R_PAREN ||
-	    expr[0] == Tokens.SINGLE_QUOTE) {
-	    return expr[0];
-	} else if (Utils.isString(expr)) {
-	    return '"' + Utils.getString(expr) + '"';
-	} else if (expr[0] == Tokens.SEMI_COLON) {
-	    var comment = '';
-	    for (var i = 0 ;i < expr.length ;i++) {
-		if (expr[i] == Tokens.NEWLINE) {
-		    break;
-		} else {
-		    comment += expr[i];
-		}
-	    }
-	    return comment;
-	} else {
-	    var sexpr = '';
-	    for (var i = 0 ;i < expr.length ;i++) {
-		if (expr[i] == Tokens.L_PAREN || expr[i] == Tokens.R_PAREN ||
-		    expr[i] == Tokens.SPACE || expr[i] == Tokens.NEWLINE) {
-		    break;
-		} else {
-		    sexpr += expr[i];
-		}
-	    }
-	    return sexpr;
-	}
-    }
-
     for (var i = 0; i < expr.length; i++) {
 	if (expr[i] != Tokens.SPACE && expr[i] != Tokens.NEWLINE) {
 	    var token = this.nextToken(expr.substring(i));
@@ -96,7 +65,7 @@ function Lexer(expr) {
 		    tokens.push(token);
 		}
 	    }
-	}
+	}	
     }
     if (open < 0) {
 	throw ParseWarning("unbalanced parens");
@@ -106,7 +75,36 @@ function Lexer(expr) {
 	return tokens;
     }
 }
-
+ 
+Lexer.prototype.nextToken = function(expr) {
+    if (expr[0] == Tokens.L_PAREN || expr[0] == Tokens.R_PAREN ||
+	expr[0] == Tokens.SINGLE_QUOTE) {
+	return expr[0];
+    } else if (Utils.isString(expr)) {
+	return '"' + Utils.getString(expr) + '"';
+    } else if (expr[0] == Tokens.SEMI_COLON) {
+	var comment = '';
+	for (var i = 0; i < expr.length; i++) {
+	    if (expr[i] == Tokens.NEWLINE) {
+		break;
+	    } else {
+		comment += expr[i];
+	    }
+	}
+	return comment;
+    } else {
+	var sexpr = '';
+	for (var i = 0; i < expr.length; i++) {
+	    if (expr[i] == Tokens.L_PAREN || expr[i] == Tokens.R_PAREN ||
+		expr[i] == Tokens.SPACE || expr[i] == Tokens.NEWLINE) {
+		break;
+	    } else {
+		sexpr += expr[i];
+	    }
+	}
+	return sexpr;
+    }
+}
 
 function Parser() {
     this.lexer = new Lexer();
@@ -191,15 +189,15 @@ Parser.prototype.nextList = function(tokens) {
 }
 
 var Actions = {
-    APPLICATION: function(expr, env) {
-	var proc = jscm_eval(Utils.car(expr), env);
+    APPLICATION: function(expr ,env) {
+	var proc = jscm_eval(Utils.car(expr) ,env);
 	if (proc instanceof SpecialForm) {
-	    return proc.apply(expr, env);
+	    return proc.apply(expr ,env);
 	} else {
 	    if (proc instanceof Builtin) {
 		proc = proc.apply;
 	    }
-	    var args = jscm_evlis(Utils.cdr(expr), env);
+	    var args = jscm_evlis(Utils.cdr(expr) ,env);
 	    if (typeof proc != 'function') {
 		throw new JSError('The object ' + Utils.format(proc) +
 				  ' is not applicable.', 'Type');
@@ -207,7 +205,7 @@ var Actions = {
 	    return proc(args);
 	}
     },
-    CONST: function(expr, env) {
+    CONST: function(expr ,env) {
 	var exprl = expr.toLowerCase();
 	if (Utils.isNumber(exprl)) {
 	    return Utils.getNumber(exprl);
@@ -217,7 +215,7 @@ var Actions = {
 	    throw new JSError(expr + " not recognized as CONST", "Value");
 	}
     },
-    IDENTIFIER: function(expr, env) {
+    IDENTIFIER: function(expr ,env) {
 	return env.lookup(expr.toLowerCase()).unbox();
     }
 };
@@ -232,12 +230,17 @@ function Builtin(name ,apply ,doc ,argdoc) {
 }
 
 Builtin.prototype.toString = function() {
-    return '#<builtin-procedure-' + this.name + '>';
+    return '#<builtin-procedure:' + this.name + '>';
 }
 
 /* ---------------- */
 function SpecialForm(name ,apply ,doc ,argdoc) {
-    this.constructor.call(name ,apply ,doc ,argdoc);
+    this.parent.constructor(name ,apply ,doc ,argdoc);
+
+    this.name = this.parent.name;
+    this.apply = this.parent.apply;
+    this.doc = this.parent.doc;
+    this.argdoc = this.parent.argdoc;
 }
 
 /* Inherit from Builtin */
@@ -297,7 +300,7 @@ var ReservedSymbolTable = new HashTable({
 	    '<p>The last argument may be any object; an improper list results if the' +
 	    ' last argument is not a proper list.</p>',
 	    'list<sub>1</sub> . obj<sub>n</sub>'),
-	'apply': new Builtin('apply', function(args) {
+	'apply': new Builtin('apply' ,function(args) {
 		if (args.length == 0 || args.length > 2)
 		    throw IllegalArgumentCountError('apply', '', 'one or two', args.length);
 		var proc = args[0];
@@ -306,11 +309,11 @@ var ReservedSymbolTable = new HashTable({
 		return proc(args[1]);
 	    }, 'Applies <em>proc</em> to elements of the list <em>args</em>.',
 	    'proc args'),
-	'asin': new Builtin('asin', function(args) {
+	'asin': new Builtin('asin' ,function(args) {
 		Utils.validateNumberArg('asin', args);
 		return Math.asin(args[0]);
 	    }, 'Returns the arc sin (in radians) of <em>z</em>.', 'z'),
-	'atan': new Builtin('atan', function(args) {
+	'atan': new Builtin('atan' ,function(args) {
 		Utils.validateNumberArg('atan' ,args);
 		return Math.atan(args[0]);
 	    }, 'Returns the arc tangent (in radians) of <em>z</em>.', 'z'),
@@ -1166,6 +1169,7 @@ Interpreter.prototype.newline = function() {
 }
 
 function jscm_repl() {
+    alert("jscm_repl()");
     if (REPL.expr.length == 0 && REPL.getline().strip().length == 0) {
 	jscm_printElement();
     } else {
@@ -1179,6 +1183,7 @@ function jscm_repl() {
 	try {
 	    scm = REPL.parser.parse(REPL.expr);
 	} catch (e) {
+	    alert(e);
 	    if (e.isIgnorable()) {
 		REPL.prefix = REPL.CONTINUE_PREFIX;
 		var prefix = REPL.lineno == 1 ? REPL.DEFAULT_PREFIX : REPL.prefix;
@@ -1208,7 +1213,9 @@ function jscm_repl() {
 };
 
 function jscm_eval(expr ,env) {
+    alert("jscm_eval("+expr+" ,"+env+")");
     var action = jscm_expressionToAction(expr);
+    alert("action is "+action);
     if (typeof action == 'function') {
 	return action(expr ,env);
     } else {
@@ -1224,7 +1231,7 @@ function jscm_beglis(es ,env) {
     return jscm_eval(es[es.length - 1] ,env);
 }
 
-function jscm_evlis(arglis, env) {
+function jscm_evlis(arglis ,env) {
     var res = [];
     for (var i = 0; i < arglis.length; i++) {
 	res.push(jscm_eval(arglis[i] ,env));
@@ -1233,6 +1240,7 @@ function jscm_evlis(arglis, env) {
 }
 
 function jscm_expressionToAction(expr) {
+    alert("jscm_expressionToAction)"+expr+")");
     if (Utils.isAtom(expr)) {
 	expr = expr.toLowerCase();
 	if (Utils.isNumber(expr) || Utils.isString(expr)) {
@@ -1420,6 +1428,44 @@ function jscm_getToggleLinkFor(what ,cssClass ,text) {
     cssClass = cssClass ? (' class="' + cssClass + '" ') : '';
     return '<a href="#" onclick="$(\'' + what + REPL.helpid + '\').toggle();' +
 	'return false;"' + cssClass + '>' + text + '</a>';
+}
+
+function Environment(parent) {
+    this.table = new HashTable();
+    this.parent = parent;
+}
+
+Environment.prototype.lookup = function(name) {
+    name = name.toLowerCase();
+    if (this.table.get(name) === undefined) {
+	if (this.parent === undefined) {
+	    var reserved = ReservedSymbolTable.get(name);
+	    if (reserved === undefined) {
+		throw UnboundVariableError(name);
+	    } else {
+		return new Box(reserved);
+	    }
+	} else {
+	    return this.parent.lookup(name);
+	}
+    } else {
+	return this.table.get(name);
+    }
+}
+
+Environment.prototype.extend = function(name ,value) {
+    name = name.toLowerCase();
+    this.table.set(name ,value);
+}
+
+Environment.prototype.multiExtend = function(names ,values) {
+    for (var i = 0 ;i < names.length ;i++) {
+	this.extend(names[i] ,values[i]);
+    }
+}
+
+Environment.prototype.extension = function() {
+    return new Environment(this);
 }
 
 function jscm_onkeydown(e) {

@@ -50,7 +50,7 @@ var Tokens = {
 var $break = { };
 
 function HashTable(object) {
-     this._table = Utils.isHash(object) ? object.toObject() : Utils.Clone(object);
+     this._table = Object.isHash(object) ? object.toObject() : Object.Clone(object);
 }
 
 HashTable.prototype.get = function(key) { 
@@ -94,199 +94,216 @@ JSString.prototype.toString = function() {
 
 /* ----------------------- */
     
-function Utils() {
-    this.JSCMLibs = new HashTable();   
-
-    this.createMatcher = function(regex) {
+function createMatcher(regex) {
 	return function(expr) {
 	    return new RegExp(regex).test(expr);
 	};
     }
 
-    this._isIdentifier = this.createMatcher(Tokens.IDENTIFIER);
-    this.isString = this.createMatcher(Tokens.STRING);
-    this.isBinary = this.createMatcher(Tokens.BINARY);
-    this.isDecimal = this.createMatcher(Tokens.DECIMAL);
-    this.isHex = this.createMatcher(Tokens.HEX);
-    this.isOctal = this.createMatcher(Tokens.OCTAL);
-    var OR = '|';
-    this.isNumber = this.createMatcher(Tokens.BINARY + OR + Tokens.DECIMAL +
-                                       OR + Tokens.HEX + OR + Tokens.OCTAL);
-}
+var OR = '|';
+var Utils = {
+    _isIdentifier: createMatcher(Tokens.IDENTIFIER),
+    isBinary: createMatcher(Tokens.BINARY),
+    isDecimal: createMatcher(Tokens.DECIMAL),
+    isOctal: createMatcher(Tokens.OCTAL),
 
-Utils.isElement = function(object) {
-    return object && object.nodeType == 1;
-}
+    isNumber: createMatcher(Tokens.BINARY + OR + Tokens.DECIMAL +
+			    OR + Tokens.HEX + OR + Tokens.OCTAL),
+    isHex: createMatcher(Tokens.HEX),
+    isString: createMatcher(Tokens.STRING),
 
-Utils.isArray = function(object) {
-    return object != null && typeof object == "object" &&
-    'splice' in object && 'join' in object;
-}
+    isIdentifier: function(expr) {
+	return !this.isNumber(expr) && !this.isString(expr) &&
+	this._isIdentifier(expr);
+    },
 
-Utils.isHash = function(object) {
-    return object instanceof HashTable;
-}
+    car: function(list) {
+	return list[0];
+    },
 
-Utils.isFunction = function(object) {
-    return typeof object == "function";
-}
-
-Utils.isString = function(object) {
-    return typeof object == "string";
-}
-
-Utils.isNumber = function(object) {
-    return typeof object == "number";
-}
-
-Utils.isUndefined = function(object) {
-    return typeof object == "undefined";
-}
-
-Utils.isIdentifier = function(expr) {
-    return !this.isNumber(expr) && !this.isString(expr) &&
-    this._isIdentifier(expr);
-}
-
-Utils.extend = function(dest ,src) {
-    for (var property in src)
-	dest[property] = src[property];
-    return dest;
-}
-
-Utils.Clone = function(obj) {
-    return Utils.extend({} ,obj);
-}
-
-Utils.car = function(list) {
-    return list[0];
-}
-
-Utils.cdr = function(list) {
-    return list.slice(1);
-}
+    cdr: function(list) {
+	return list.slice(1);
+    },
     
-Utils.cons = function(x ,y) {
-    var tmp = [x].concat(y);
-    return tmp;
-}
+    cons: function(x ,y) {
+	var tmp = [x].concat(y);
+	return tmp;
+    },
 
-Utils.getNumber = function(expr) {
-    expr = expr.toString();
-    if (this.isBinary(expr)) {
-	var res = 0 ,pow = 0;
-	for (var i = expr.length - 1 ;i > 1 ;i--) {
-	    res += parseInt(expr[i]) * Math.pow(2 ,expr.length - i - 1);
+    getNumber: function(expr) {
+	expr = expr.toString();
+	if (this.isBinary(expr)) {
+	    var res = 0 ,pow = 0;
+	    for (var i = expr.length - 1 ;i > 1 ;i--) {
+		res += parseInt(expr[i]) * Math.pow(2 ,expr.length - i - 1);
+	    }
+	    return res;
+	} else if (this.isDecimal(expr)) {
+	    if (expr.indexOf('.') != -1) {
+		return parseFloat(expr.replace('#d' ,''));
+	    } else {
+		return parseInt(expr.replace('#d' ,''));
+	    }
+	} else if (this.isHex(expr)) {
+	    return parseInt(expr.replace('#' ,'0') ,16);
+	} else if (this.isOctal(expr)) {
+	    return parseInt(expr.replace('#o' ,'') ,8);
+	} else {
+	    throw new TypeError(expr + " is not a number");
+	}
+    },
+
+    getString: function(expr) {
+	if (this.isString(expr)) {
+	    return new JSString(new RegExp(Tokens.STRING).exec(expr)[1]);
+	} else {
+	    throw new TypeError(expr + " is not a string");
+	}
+    },
+
+
+    isAtom: function(expr) {
+	return !Object.isArray(expr);
+    },
+
+    isNull: function(expr) {
+	return Object.isArray(expr) && expr.length == 0;
+    },
+
+    format: function(expr) {
+	if (typeof expr == 'function') {
+	    return expr.name === undefined ? '#<procedure>' : expr.name;
+	} else if (expr === true) {
+	    return '#t';
+	} else if (expr === false) {
+	    return '#f';
+	} else if (expr instanceof Promise) {
+	    return expr.toString();
+	} else if (expr instanceof JSString) {
+	    return '"' + expr + '"';
+	} else if (Object.isArray(expr) && expr[0] instanceof Pair) {
+	    var cpy = expr.clone();
+	    for (var i = 0; i < cpy.length; i++) {
+		cpy[i] = this.format(cpy[i]);
+	    }
+	    return Object.inspect(cpy).gsub('[\\[]','(').gsub(']',')').gsub(',','').gsub('\'','');
+	} else if (Object.isArray(expr)) {
+	    var str = '(';
+	    for (var i = 0 ;i < expr.length ;i++) {
+		str += (i > 0 ? ' ' : '') + this.format(expr[i]);
+	    }
+	    str += ')';
+	    return str;
+	} else {
+	    return Object.inspect(expr).gsub('[\\[]','(').gsub(']',')').gsub(',','').gsub('\'','');
+	}
+    },
+
+    map: function(op ,args) {
+	var res = [];
+	for (var i = 0 ;i < args.length ;i++) {
+	    res.push(op(args[i]));
 	}
 	return res;
-    } else if (this.isDecimal(expr)) {
-	if (expr.indexOf('.') != -1) {
-	    return parseFloat(expr.replace('#d' ,''));
-	} else {
-	    return parseInt(expr.replace('#d' ,''));
+    },
+
+    mapCmp: function(op ,args) {
+	for (var i = 1 ;i < args.length ;i++) {
+	    if (op(this.car(args) ,args[i])) {
+		return false;
+	    }
 	}
-    } else if (this.isHex(expr)) {
-	return parseInt(expr.replace('#' ,'0') ,16);
-    } else if (this.isOctal(expr)) {
-	return parseInt(expr.replace('#o' ,'') ,8);
-    } else {
-	throw new TypeError(expr + " is not a number");
-    }
-}
-
-Utils.getString = function(expr) {
-    if (this.isString(expr)) {
-	return new JSString(new RegExp(Tokens.STRING).exec(expr)[1]);
-    } else {
-	throw new TypeError(expr + " is not a string");
-    }
-}
-
-Utils.inspect = function(object) {
-    try {
-      if (Utils.isUndefined(object)) return 'undefined';
-      if (object === null) return 'null';
-      return object.inspect ? object.inspect(object) : String(object);
-    } catch (e) {
-      if (e instanceof RangeError) return '...';
-      throw e;
-    }
-}
-
-Utils.isAtom = function(expr) {
-    return !Utils.isArray(expr);
-}
-
-Utils.isNull = function(expr) {
-    return Utils.isArray(expr) && expr.length == 0;
-}
-
-Utils.format = function(expr) {
-    if (typeof expr == 'function') {
-	return expr.name === undefined ? '#<procedure>' : expr.name;
-    } else if (expr === true) {
-	return '#t';
-    } else if (expr === false) {
-	return '#f';
-    } else if (expr instanceof Promise) {
-	return expr.toString();
-    } else if (expr instanceof JSString) {
-	return '"' + expr + '"';
-    } else if (Utils.isArray(expr) && expr[0] instanceof Pair) {
-	var cpy = expr.clone();
-	for (var i = 0; i < cpy.length; i++) {
-	    cpy[i] = this.format(cpy[i]);
-	}
-	return Utils.inspect(cpy).gsub('[\\[]','(').gsub(']',')').gsub(',','').gsub('\'','');
-    } else if (Utils.isArray(expr)) {
-	var str = '(';
-	for (var i = 0 ;i < expr.length ;i++) {
-	    str += (i > 0 ? ' ' : '') + this.format(expr[i]);
-	}
-	str += ')';
-	return str;
-    } else {
-	return Utils.inspect(expr).gsub('[\\[]','(').gsub(']',')').gsub(',','').gsub('\'','');
-    }
-}
-
-Utils.map = function(op ,args) {
-    var res = [];
-    for (var i = 0 ;i < args.length ;i++) {
-	res.push(op(args[i]));
-    }
-    return res;
-}
-
-Utils.mapCmp = function(op ,args) {
-    for (var i = 1 ;i < args.length ;i++) {
-	if (op(this.car(args) ,args[i])) {
-	    return false;
-	}
-    }
-    return true;
-}
-    
-Utils.mapOp = function(op ,initial ,args ,func) {
-    var ans = this.getNumber(initial);
-    if (!this.isNumber(ans))
-	throw IllegalArgumentTypeError(func ,ans ,1);
-    for (var i = 0 ;i < args.length ;i++) {
-	if (!this.isNumber(args[i]))
-	    throw IllegalArgumentTypeError(func ,args[i] ,i+1);
-	ans = op(ans ,this.getNumber(args[i]));
-    }
-    return ans;
-}
-
-Utils.validateNumberArg = function(proc ,args) {
-    if (args.length != 1) {
-	throw IllegalArgumentCountError(proc ,'exactly' ,1 ,args.length);
-    } else if (!Util.isNumber(args[0])) {
-	throw IllegalArgumentTypeError(proc ,args[0] ,1);
-    } else {
 	return true;
-    }
+    },
+    
+    mapOp: function(op ,initial ,args ,func) {
+	var ans = this.getNumber(initial);
+	if (!this.isNumber(ans))
+	    throw IllegalArgumentTypeError(func ,ans ,1);
+	for (var i = 0 ;i < args.length ;i++) {
+	    if (!this.isNumber(args[i]))
+		throw IllegalArgumentTypeError(func ,args[i] ,i+1);
+	    ans = op(ans ,this.getNumber(args[i]));
+	}
+	return ans;
+    },
+
+    validateNumberArg: function(proc ,args) {
+	if (args.length != 1) {
+	    throw IllegalArgumentCountError(proc ,'exactly' ,1 ,args.length);
+	} else if (!Utils.isNumber(args[0])) {
+	    throw IllegalArgumentTypeError(proc ,args[0] ,1);
+	} else {
+	    return true;
+	}
+    },
+
+    Serializers: {
+	input: function(element, value) {
+	    switch (element.type.toLowerCase()) {
+	    case 'checkbox':
+	    case 'radio':
+	    return Utils.Serializers.inputSelector(element, value);
+	    default:
+	    return Utils.Serializers.textarea(element, value);
+	    }
+	},
+
+	inputSelector: function(element, value) {
+	    if (Object.isUndefined(value)) 
+		return element.checked ? element.value : null;
+	    else 
+		element.checked = !!value;
+	},
+
+	textarea: function(element ,value) {
+	    if (Object.isUndefined(value)) 
+		return element.value;
+	    else 
+		element.value = value;
+	},
+
+	select: function(element ,index) {
+	    if (Object.isUndefined(index))
+		return this[element.type == 'select-one' ?
+			    'selectOne' : 'selectMany'](element);
+	    else {
+		var opt, value, single = !Object.isArray(index);
+		for (var i = 0, length = element.length; i < length; i++) {
+		    opt = element.options[i];
+		    value = this.optionValue(opt);
+		    if (single) {
+			if (value == index) {
+			    opt.selected = true;
+			    return;
+			}
+		    }
+		    else opt.selected = index.include(value);
+		}
+	    }
+	},
+
+	selectOne: function(element) {
+	    var index = element.selectedIndex;
+	    return index >= 0 ? this.optionValue(element.options[index]) : null;
+	},
+
+	selectMany: function(element) {
+	    var values, length = element.length;
+	    if (!length) return null;
+
+	    for (var i = 0, values = []; i < length; i++) {
+		var opt = element.options[i];
+		if (opt.selected) values.push(this.optionValue(opt));
+	    }
+	    return values;
+	},
+
+	optionValue: function(opt) {
+	    // extend element because hasAttribute may not be native
+	    return opt.text;
+	}
+    },
 }
 
 
@@ -345,7 +362,7 @@ Pair.prototype.isEmpty = function() {
 Pair.prototype.isNullTerminated = function() {
     if (Utils.isNull(this.cdr)) {
 	return true;
-    } else if (Utils.isArray(this.cdr) && this.cdr.length == 1 &&
+    } else if (Object.isArray(this.cdr) && this.cdr.length == 1 &&
 	       this.cdr[0] instanceof Pair) {
 	return this.cdr[0].isNullTerminated();
     } else {
@@ -382,46 +399,6 @@ Box.prototype.setbox = function(obj) {
     this.obj = obj;
 }
 
-/* ----------------- */
-
-function Environment(parent) {
-    this.table = new HashTable();
-    this.parent = parent;
-}
-
-Environment.prototype.lookup = function(name) {
-    name = name.toLowerCase();
-    if (this.table.get(name) === undefined) {
-	if (this.parent === undefined) {
-	    var reserved = ReservedSymbolTable.get(name);
-	    if (reserved === undefined) {
-		throw UnboundVariableError(name);
-	    } else {
-		return new Box(reserved);
-	    }
-	} else {
-	    return this.parent.lookup(name);
-	}
-    } else {
-	return this.table.get(name);
-    }
-}
-
-Environment.prototype.extend = function(name ,value) {
-    name = name.toLowerCase();
-    this.table.set(name ,value);
-}
-
-Environment.prototype.multiExtend = function(names ,values) {
-    for (var i = 0 ;i < names.length ;i++) {
-	this.extend(names[i] ,values[i]);
-    }
-}
-
-Environment.extension = function() {
-    return new Environment(this);
-}
- 
 /* --------------------- */
 
 function History(capacity) {
@@ -469,14 +446,6 @@ function $(element) {
     return document.getElementById(element);
 }
 
-String.prototype.strip = function() {
-    return this.replace(/^\s+/, '').replace(/\s+$/, '');
-}
-
-Object.prototype.update = function () {
-    return __method.apply(null, [this].concat($A(arguments)));
-}
-
 var $F = function(element) {
     element = $(element);
     var method = element.tagName.toLowerCase();
@@ -491,72 +460,45 @@ function $A(iterable) {
   return results;
 }
 
-Utils.Serializers = {
-  input: function(element, value) {
-    switch (element.type.toLowerCase()) {
-      case 'checkbox':
-      case 'radio':
-        return Utils.Serializers.inputSelector(element, value);
-      default:
-        return Utils.Serializers.textarea(element, value);
-    }
-  },
+/* ---------String-------- */
 
-  inputSelector: function(element, value) {
-    if (Utils.isUndefined(value)) 
-	return element.checked ? element.value : null;
-    else 
-	element.checked = !!value;
-  },
+String.interpret = function(value) {
+    return value == null ? '' : String(value);
+}
 
-  textarea: function(element, value) {
-    if (Utils.isUndefined(value)) 
-	return element.value;
-    else 
-	element.value = value;
-  },
+String.specialChar = {
+    '\b': '\\b',
+    '\t': '\\t',
+    '\n': '\\n',
+    '\f': '\\f',
+    '\r': '\\r',
+    '\\': '\\\\'
+}
 
-  select: function(element, index) {
-    if (Utils.isUndefined(index))
-      return this[element.type == 'select-one' ?
-        'selectOne' : 'selectMany'](element);
-    else {
-      var opt, value, single = !Utils.isArray(index);
-      for (var i = 0, length = element.length; i < length; i++) {
-        opt = element.options[i];
-        value = this.optionValue(opt);
-        if (single) {
-          if (value == index) {
-            opt.selected = true;
-            return;
-          }
-        }
-        else opt.selected = index.include(value);
+String.prototype.strip = function() {
+    return this.replace(/^\s+/, '').replace(/\s+$/, '');
+}
+
+String.prototype.gsub = function(pattern ,replacement) {
+    var result = '', source = this, match;
+
+    while (source.length > 0) {
+      if (match = source.match(pattern)) {
+        result += source.slice(0, match.index);
+        result += String.interpret(replacement(match));
+        source  = source.slice(match.index + match[0].length);
+      } else {
+        result += source, source = '';
       }
     }
-  },
+    return result;
+}
 
-  selectOne: function(element) {
-    var index = element.selectedIndex;
-    return index >= 0 ? this.optionValue(element.options[index]) : null;
-  },
+/* ---------String-------- */
 
-  selectMany: function(element) {
-    var values, length = element.length;
-    if (!length) return null;
-
-    for (var i = 0, values = []; i < length; i++) {
-      var opt = element.options[i];
-      if (opt.selected) values.push(this.optionValue(opt));
-    }
-    return values;
-  },
-
-  optionValue: function(opt) {
-    // extend element because hasAttribute may not be native
-    return opt.text;
-  }
-};
+Object.prototype.update = function () {
+    return __method.apply(null, [this].concat($A(arguments)));
+}
 
 function $A(iterable) {
   if (!iterable) return [];
@@ -578,6 +520,85 @@ Object.prototype._each = function(iterator) {
 	iterator(this[i]);
 }
 
+Object.isElement = function(object) {
+    return object && object.nodeType == 1;
+}
+
+Object.isArray = function(object) {
+    return object != null && typeof object == "object" &&
+    'splice' in object && 'join' in object;
+}
+
+Object.isHash = function(object) {
+    return object instanceof HashTable;
+}
+
+Object.isFunction = function(object) {
+    return typeof object == "function";
+}
+
+Object.isString = function(object) {
+    return typeof object == "string";
+}
+
+Object.isNumber = function(object) {
+    return typeof object == "number";
+}
+
+Object.isUndefined = function(object) {
+    return typeof object == "undefined";
+}
+
+Object.prototype.inject = function(memo ,iterator ,context) {
+    iterator = iterator.bind(context);
+    this.each(function(value, index) {
+	    memo = iterator(memo, value, index);
+	});
+    return memo;
+}
+
+Object.prototype.each = function(iterator ,context) {
+    var index = 0;
+    iterator = iterator.bind(context);
+    try {
+	this._each(function(value) {
+		iterator(value, index++);
+	    });
+    } catch (e) {
+	if (e != $break) throw e;
+    }
+    return this;
+}
+
+
+Object.prototype.uniq = function(sorted) {
+    return this.inject([], function(array ,value ,index) {
+	    if (0 == index || (sorted ? array.last() != value : !array.include(value)))
+		array.push(value);
+	    return array;
+	});
+}
+
+Object.extend = function(dest ,src) {
+    for (var property in src)
+	dest[property] = src[property];
+    return dest;
+}
+
+Object.Clone = function(obj) {
+    return Object.extend({} ,obj);
+}
+
+Object.inspect = function(object) {
+    try {
+	if (Object.isUndefined(object)) return 'undefined';
+	if (object === null) return 'null';
+	return object.inspect ? object.inspect(object) : String(object);
+    } catch (e) {
+	if (e instanceof RangeError) return '...';
+	throw e;
+    }
+}
 
 /* ---Element--- */
 Element.prototype.hasClassName = function(element ,className) {
