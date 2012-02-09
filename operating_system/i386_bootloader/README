@@ -1,5 +1,5 @@
 This bootloader sample is modified from NalaGinrut's OS project MIMOSA. 
 It shows a simple boot code, and it can load a ELF format kernel from disk.
 
-If you're interesting, you may checkout MIMOSA here:
+If you're interested in, you may checkout MIMOSA here:
 git://gitorious.org/mimosa/mimosa.git
