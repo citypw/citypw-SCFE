@@ -19,13 +19,13 @@
 
 (use-modules (srfi srfi-1))
 
-(define (matrix:+ m1 m2)
+(define (matrix:dot+ m1 m2)
   (matrix:linear-op '+))
-(define (matrix:+ m1 m2)
+(define (matrix:dot- m1 m2)
   (matrix:linear-op '-))
-(define (matrix:+ m1 m2)
+(define (matrix:dot* m1 m2)
   (matrix:linear-op '*))
-(define (matrix:+ m1 m2)
+(define (matrix:dot/ m1 m2)
   (matrix:linear-op '/))
 
 
@@ -92,7 +92,7 @@
   (lambda (op)
     (car (assoc-ref *row-op-table* op))))
 
-(define matrix:*
+(define matrix:cross*
   (lambda (a b)
     (let ([ar (matrix-dimrow a)]
 	  [ac (matrix-dimcol a)]
