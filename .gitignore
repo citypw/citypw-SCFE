@@ -58,3 +58,6 @@ cscope.files
 *.am
 *.d
 version.scm
+*.img
+boot
+boot.*
