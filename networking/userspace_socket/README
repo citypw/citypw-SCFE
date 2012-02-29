@@ -1,0 +1,35 @@
+Feb 29th 2012
+You can run the programs after compiling(just type "make"). Run the simple_tcp_server on machine X1:
+
+#./simple_tcp_server
+TCP server waiting for client on port 5566!
+
+NOw run the client on machine X2:
+
+#./simple_tcp_client 192.168.77.1
+Server: Shalom!
+Client: Are you Jew?
+
+Type "yes" or "no" in X1's terminal:
+yes
+Server: yes
+Client: Actually, the singularitarian has always believed in .....
+
+client is closed!
+
+This is simple enough, right? The above sample was a tcp-based couple. NOw let's try udp ones. Run the server on X1:
+#./udp_cmd_server -d
+DEBUG MODE has been set...
+pid : 22987
+File: udp_cmd_server.c, Function: check_instance, Line: 91
+Description: can't open dir!
+-------------------------------
+
+You might need "-h" or "--help". Run the client on X2:
+#./udp_cmd_client 192.168.77.1 "ls"
+
+Now see what happend in X1's terminal:
+--------------------------------------
+got ls
+common.h  select	     simple_tcp_client.c  simple_tcp_server.c  udp_cmd_client.c  udp_cmd_server.c
+Makefile  simple_tcp_client  simple_tcp_server	  udp_cmd_client       udp_cmd_server
