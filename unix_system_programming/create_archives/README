@@ -1,0 +1,12 @@
+/**
+ * This code is GPL'ed!
+ * monkey-coder:Shawn the R0ck <citypw@gmail.com>
+ */
+
+Dude, you got 2 choice: ONe, type the commands are following:
+1,gcc -c *.c
+2,ar crv libfunc.a test1.o test2.o
+3,gcc -o run run.o libfunc.a
+4,./run
+
+Or, just type "make"
