@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
     exit(1);
   }
 
-  //host = gethostbyname(argv[1]);
+  host = gethostbyname(argv[1]);
 
   sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
   memset(buf, '\0', sizeof(buf));
   memset(&serv_addr, 0x00, sizeof(serv_addr));
   serv_addr.sin_family = AF_INET;
-  serv_addr.sin_port = htons(5566);
+  serv_addr.sin_port = htons(SERV_PORT);
   //  serv_addr.sin_addr = *((struct in_addr*)host->h_addr);
   inet_aton(argv[1], &serv_addr.sin_addr);
 

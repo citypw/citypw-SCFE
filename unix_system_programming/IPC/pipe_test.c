@@ -9,6 +9,9 @@
 #include <unistd.h> /* using pid_t */
 #include <string.h> /* memset() */
 
+#define READ 0
+#define WRITE 1
+
 int main(int argc, char **argv[])
 {
   pid_t pid;
@@ -36,25 +39,25 @@ int main(int argc, char **argv[])
   }
   else if(pid == 0){
     /* child process */
-    close(fd[0]);
+    close(fd[READ]);
     sleep(1);
-    write(fd[1], test_msg, strlen(test_msg));
+    write(fd[WRITE], test_msg, strlen(test_msg));
     DEBUG_MSG("The msg \"%s\" was written to another pipe!\n", test_msg);
-    close(fd[1]);
+    close(fd[WRITE]);
     return 0;
   }
   else{
     /* parent process will read the msg from the child-side */
-    close(fd[1]);
+    close(fd[WRITE]);
     while(1){
-      rd_num = read(fd[0], rd_buf, sizeof(rd_buf));
+      rd_num = read(fd[READ], rd_buf, sizeof(rd_buf));
       if(rd_num > 0){
         DEBUG_MSG("Got a msg:\"%s\" from another pipe!\n", rd_buf);
         memset(rd_buf, '\0', 256);
       }
     }
 
-    close(fd[0]);
+    close(fd[READ]);
     return 0;
   }
 
