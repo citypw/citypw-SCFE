@@ -1,0 +1,26 @@
+May 13 2012, Beijing
+
+This is a sample program that can overwrite the EIP register. I wrote
+3 programming languages version: C, python and Guile/Scheme. But only
+the 1st two are works. I don't know why Guile version have something
+wrong with exploit to overwrite the eip register. Fortunately, this is
+just a sample code. So only the C code is neccessary.
+
+How to use the code:
+#make
+
+C version:
+#./attack
+
+python version:
+#python attack.py
+
+Guile version:
+#guile -l attack.scm
+
+Anyone can help me fix the Guile version? I would really appreciate that.
+
+Happy hacking!
+
+If you need more further reading, download the paper:
+http://www.exploit-db.com/download_pdf/17008
