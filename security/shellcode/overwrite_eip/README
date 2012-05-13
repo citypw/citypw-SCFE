@@ -10,7 +10,15 @@ How to use the code:
 #make
 
 C version:
-#./attack
+shawn$#./attack
+The address of func test(): 0x8048454, func fuck_me(): 0x8048482
+AAAAAAAAAABBBBCCCC�� 
+being hacked
+Segmentation fault
+
+You need to check the fuck_me()'s address. It might be different with
+mine. That's only stuff you need to modify in these attack
+files(attack.c, attack.py, attack.scm).
 
 python version:
 #python attack.py
