@@ -1,4 +1,33 @@
-May 13 2012, Beijing
+Shawn the R0ck -- May 16 2012, Beijing
+
+The Guile version works. I will show you how to make it work. In most
+ubuntu-like GNU/Linux distributions is not installed the
+en_US.ISO-8859-15 at default. So you need to add the one to your
+system:
+
+#localedef -c -i en_US -f ISO-8859-15 en_US.ISO-8859-15
+#locale-gen
+
+It's a little bit of different implementation from different encoding
+format, which the ISO-8859-15 is the byte-string implementation( just
+like C programming language) and UNICODE is the character-string
+implementation. So if you intend to write your exploit in Guile, the
+only thing you need to do is to add a line of code into the 1st line
+of source code:
+
+(setlocale LC_ALL "en_US.iso88591")
+
+I reported this bug to NalaGinrut a few days agao. He disscused the
+issue with Andy Wingo, and they sent me the solution. They also talked
+about the character-string is the future trend in functional language
+including python version 3. Thanks to them!
+
+Now we can feel free to write exploit test in Guile.
+
+May L0rd's hacking spirit guide us!!!
+
+
+Shawn the R0ck -- May 13 2012, Beijing
 
 This is a sample program that can overwrite the EIP register. I wrote
 3 programming languages version: C, python and Guile/Scheme. But only
