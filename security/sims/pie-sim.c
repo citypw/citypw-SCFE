@@ -13,7 +13,8 @@ int main()
 {
 	FILE *fp;
 	int ret;
-
+	char c = 0;
+	
 	fp = fopen("/dev/urandom", "r");
 	if(fp == NULL){
 		fprintf(stderr, "fp is null\n");
@@ -22,15 +23,15 @@ int main()
 
 	int reslen = fread(&ret, sizeof(int), 1, fp);
 
-	printf("0x%x\n", ret);
+	printf("Address:\n0x%x\n", ret);
 
 	fclose(fp);
 
-	ret = 0;
+//	ret = 0;
 	unsigned char *p = (unsigned char*) &ret;
-	p[ sizeof(ret) - 1] = 255;
-	p[ sizeof(ret) -2] = '\n';
-
+	p[ sizeof(ret) - 1] = 0x80;
+	p[ sizeof(ret) -2] = 0x00;
+	
 	printf("0x%x\n", ret);
 
 	return 0;
