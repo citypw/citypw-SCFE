@@ -1,0 +1,119 @@
+Shawn the R0ck, Aug 15 2012
+
+Just ignore the below:
++-----------------------------------------------------------------------------------
+| There are a lot of interesting things inside the machine.                        |
+|                                                                                  |
+| There are some intrinsically desires always makes us tick.                       |
++----------------------------------------------------------------------------------+
+| We want the truth which behind the surface.                                      |
+|                                                                                  |
+| We want the machine and program code to become our bitches.                      |
++----------------------------------------------------------------------------------+
+| We know they( machine/code) will be having intelligence someday in the future.   |
+|                                                                                  |
+| We know they are coming, from some sort of co-evolution within complexity.       |
++----------------------------------------------------------------------------------+
+| We don't have much time on our interesting hacking.                              |
+|                                                                                  |
+| We don't have even a room for fuck around.                                       |
++----------------------------------------------------------------------------------+
+| We lost Faith, Hope and Love.                                                    |
+|                                                                                  |
+| We lost everything what we don't deserve.                                        |
++----------------------------------------------------------------------------------+
+
+Wait a mins, there's only thing we can do: hacking....until that day come.
+
+
+Bullshit a lot, again? SOrry about that guys. Seriously, I'm very
+curious about these memory corruption mitigation technique. A lot of
+terms sound pretty familiar but I totally don't understand what hides
+behind the surface. Maybe it's the delicious fruits that only wait for
+us, or a final BOSS, which the only BFG can beat with. Can we write
+some simulate programs to make us better understanding? Maybe. I will
+list some sort of terms we could take it try. I brought the 1st sim
+program that does make some sense on PIE technique. Read the fucking
+source code, please!
+
+00000000-----------------------------------------------------------------11111111
+
+
+*) AAAS (ASCII Armored Address Space)
+
+AAAS is a very interesting idea. The idea is to load libraries (and more
+generally any ET_DYN object) in the 16 first megabytes of the address
+space. As a result, all code and data of these shared libraries are located
+at addresses beginning with a NULL byte. It naturally breaks the
+exploitation of the particular set of overflow bugs in which an improper
+use of the NULL byte character leads to the corruption (for example
+strcpy() functions and similar situations). Such a protection is
+intrinsically not effective against situations where the NULL byte is not
+an issue or when the return address used by the attacker does not contain a
+NULL byte (like the PLT on Linux/*BSD x86 systems). Such a protection is
+used on Fedora distributions.
+
+
+*) ESP (Executable Space Protection)
+
+The idea of this protection mechanism is very old and simple.
+Traditionally, overflows are exploited using shellcodes which means the
+execution of user supplied 'code' in a 'data' area. Such an unusual
+situation is easily mitigated by preventing data sections (stack, heap,
+.data, etc.) and more generally (if possible) all writable process memory
+from executing. This cannot however prevent the attacker from calling
+already loaded code such as libraries or program functions. This led to the
+classical return-into-libc family of attacks. Nowadays all PAE or 64 bits
+x86 linux kernel are supporting this by default.
+
+
+*) ASLR (Address Space Layout Randomization)
+
+The idea of ASLR is to randomize the loading address of several memory
+areas such as the program's stack and heap, or its libraries. As a result
+even if the attacker overwrites the metadata and is able to change the
+program flow, he doesn't know where the next instructions (shellcode,
+library functions) are. The idea is simple and effective. ASLR is enabled
+by default on linux kernel since linux 2.6.12.
+
+/proc/sys/kernel/randomize_va_space
+
+
+*) Stack canaries (canaries of the death)
+
+This is a compiler mechanism, in contrast to previously kernel-based
+described techniques. When a function is called, the code inserted by the
+compiler in its prologue stores a special value (the so-called cookie) on
+the stack before the metadata. This value is a kind of defender of
+sensitive data. During the epilogue the stack value is compared with the
+original one and if they are not the same then a memory corruption must
+have occurred. The program is then killed and this situation is reported in
+the system logs. Details about technical implementation and little arm race
+between protection and bypassing protection in this area will be explained
+further.
+
+gcc options: -fno-stack-protector, -fstack-protector -fstack-protector-all
+
+
+*) NX
+
+This mechanism can be implemented by hardware or software
+emulation. Take a look: http://en.wikipedia.org/wiki/NX_bit
+
+in gcc's options, NX is enable by default. If you want to turn it off,
+use "-z execstack".
+
+
+*) RELRO
+
+RELocation Read-Only.
+
+Turn it on: -z norelro 
+Turn it off: -z now
+
+
+*) PIE
+
+http://en.wikipedia.org/wiki/Position-independent_code
+
+gcc option: -pie, it only work when kernel provides ASLR.
