@@ -124,7 +124,7 @@
 	  [row-op (get-row-op op)]
 	  [r (matrix-dimrow a)]
 	  )
-      (if (not (equal? ad bd))
+      (if (and (or (integer? ad) (integer? bd)) (not (equal? ad bd)))
 	  (error matrix:linear-op "two matrix's dimension must equal!~%"))
       (let lp ([r r] [result '()])
 	(cond
