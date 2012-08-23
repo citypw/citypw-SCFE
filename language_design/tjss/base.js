@@ -184,6 +184,7 @@ var Utils = {
 	} else if (Object.isArray(expr) && expr[0] instanceof Pair) {
 	    var cpy = expr.clone();
 	    for (var i = 0; i < cpy.length; i++) {
+		console.log(cpy[i]);
 		cpy[i] = this.format(cpy[i]);
 	    }
 	    return Object.inspect(cpy).gsub('[\\[]','(').gsub(']',')').gsub(',','').gsub('\'','');
@@ -352,7 +353,7 @@ Promise.prototype.force = function() {
 function Pair(car ,cdr ,parens) {
     this.car = car;
     this.cdr = cdr;
-    this.parens = parens === undefined ? true : parens;
+    this.parens = (parens === undefined ? false : parens);
 }
 
 Pair.prototype.isEmpty = function() {
@@ -379,11 +380,10 @@ Pair.prototype.toString = function() {
     if (this.isNullTerminated()) {
 	return this.toStringList();
     }
-    
-    return 
-    (this.parens ? '(' : '') + Utils.format(this.car) 
-    + ' . ' + Utils.format(this.cdr) + (this.parens ? ')' : '');
+
+    return (this.parens ? '(' : '') + Utils.format(this.car) + ' . ' + Utils.format(this.cdr) + (this.parens ? ')' : ''); 
 }
+
 
 /* ----------------- */
 
@@ -475,6 +475,10 @@ String.specialChar = {
     '\\': '\\\\'
 }
 
+String.prototype.clone = function() {
+    return this.valueOf();
+}
+
 String.prototype.strip = function() {
     return this.replace(/^\s+/, '').replace(/\s+$/, '');
 }
@@ -495,6 +499,12 @@ String.prototype.gsub = function(pattern ,replacement) {
 }
 
 /* ---------String-------- */
+
+/* ----------Array-------- */
+Array.prototype.clone = function() {
+    return this.slice(0);
+}
+/* ----------Array-------- */
 
 Object.prototype.updateHTML = function(content) {
     this.innerHTML = content;
@@ -519,8 +529,8 @@ Object.isElement = function(object) {
 }
 
 Object.isArray = function(object) {
-    return object != null && typeof object == "object" &&
-    'splice' in object && 'join' in object;
+    return object != undefined && object != null && typeof object == "object" &&
+	'splice' in object && 'join' in object;
 }
 
 Object.isHash = function(object) {
@@ -599,7 +609,7 @@ Object.inspect = function(object) {
     try {
 	if (Object.isUndefined(object)) return 'undefined';
 	if (object === null) return 'null';
-	return object.inspect ? object.inspect(object) : String(object);
+	return object.inspect != undefined ? object.inspect(object) : String(object);
     } catch (e) {
 	if (e instanceof RangeError) return '...';
 	throw e;
