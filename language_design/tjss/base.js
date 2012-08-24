@@ -381,7 +381,8 @@ Pair.prototype.toString = function() {
 	return this.toStringList();
     }
 
-    return (this.parens ? '(' : '') + Utils.format(this.car) + ' . ' + Utils.format(this.cdr) + (this.parens ? ')' : ''); 
+    //return (this.parens ? '(' : '') + Utils.format(this.car) + ' . ' + Utils.format(this.cdr) + (this.parens ? ')' : ''); 
+    return '(' + Utils.format(this.car) + ' . ' + Utils.format(this.cdr) + ')';
 }
 
 
