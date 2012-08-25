@@ -447,7 +447,7 @@ var ReservedSymbolTable = new HashTable({
 		if (args.length != 2)
 		    throw IllegalArgumentCountError('cons', 'exactly', 2, args.length);
 		if (Utils.isAtom(args[1])) {
-		    return new Pair(args[0], args[1]);
+		    return new Pair(args[0], args[1], false);
 		} else {
 		    return Utils.cons(args[0], args[1]);
 		}
@@ -1258,7 +1258,7 @@ function jscm_print(obj) {
     } else if ((obj instanceof Error) || (obj instanceof JSError)) {
 	jscm_printBlock(';' + obj ,'error');
     } else {
-	jscm_printBlock(';Value: ' + Utils.format(obj), 'value');
+	jscm_printBlock('        ==> Value: ' + Utils.format(obj), 'value');
     }
 }
 
