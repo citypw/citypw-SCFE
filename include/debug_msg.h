@@ -1,3 +1,5 @@
+#include <errno.h>
+
 /* Using these 2 macros instead of traditional printf */
 #define DEBUG_ERR(format, args...) fprintf(stderr, format, ##args)
 
