@@ -1,0 +1,129 @@
+Shawn the R0ck, Sep 6 2012
+
++-----------------------------------------------------------------------------------
+| Firstly, we are hacking this shit on GNU/Linux                                   |
+|                                                                                  |
+| Which means....                                                                  |
++----------------------------------------------------------------------------------+
+| We don't have great static analysis tools                                        |
+|                                                                                  |
+| Such as, IDA Pro...                                                              |
++----------------------------------------------------------------------------------+
+| We don't have easy-to-use debugger                                               |
+|                                                                                  |
+| Such as, ollydbg and immunity debugger...                                        |
++----------------------------------------------------------------------------------+
+| But----------------------                                                        |
+|                         |                                                        |
+|                        \*/                                                       |
++----------------------------------------------------------------------------------+
+| We still have hacker's arsenals.                                                 |
+|                                                                                  |
+| GNU Debugger, hexedit and objdump----let's go hunt dinosaur@_@                   |
++----------------------------------------------------------------------------------+
+
+We need to know something about file format before dive into the
+details. Every file has their own offset in hard disk. The file has
+some connection with memory when it loaded into the memory. There are
+a lot of details for different file format. ELF is the most popular
+one in GNU/Linux and PE is the one in M$-Windows, respectively. We
+only need to know how to calculate the file offset here. For further
+reading, I suggest you to:
+
+[ELF] http://wiki.osdev.org/ELF
+[PE]  http://msdn.microsoft.com/en-us/magazine/cc301805.aspx
+
+----------------------------------------------------------------
+How to calculate the file offset? It's fuc*ing easy in this case:
+
+PE file offset:
+
+PE Binary excutable Image Base = 400000h
+File Offset = RVA - Virtual Offset(Image Base addr) + Raw Offset
+
+ELF file offset:
+VA - Load Addr = file offset
+
+------------------------------------------------------------------
+The 1st sample is pretty easy to crack. Let's do this:
+
+shawn@bt:/home/SCFE/security/crack_me$ gdb -q verify_pw 
+Reading symbols from /home/SCFE/security/crack_me/verify_pw...done.
+(gdb) disassemble main
+Dump of assembler code for function main:
+   0x080484e5 <+0>:	push   %ebp
+   0x080484e6 <+1>:	mov    %esp,%ebp
+   0x080484e8 <+3>:	and    $0xfffffff0,%esp
+   0x080484eb <+6>:	sub    $0x430,%esp
+   0x080484f1 <+12>:	mov    0xc(%ebp),%eax
+   0x080484f4 <+15>:	mov    %eax,0x1c(%esp)
+   0x080484f8 <+19>:	mov    %gs:0x14,%eax
+   0x080484fe <+25>:	mov    %eax,0x42c(%esp)
+   0x08048505 <+32>:	xor    %eax,%eax
+   0x08048507 <+34>:	movl   $0x0,0x28(%esp)
+   0x0804850f <+42>:	movl   $0x8048649,(%esp)
+   0x08048516 <+49>:	call   0x80483f0 <puts@plt>
+   0x0804851b <+54>:	mov    $0x804865c,%eax
+   0x08048520 <+59>:	lea    0x2c(%esp),%edx
+   0x08048524 <+63>:	mov    %edx,0x4(%esp)
+   0x08048528 <+67>:	mov    %eax,(%esp)
+   0x0804852b <+70>:	call   0x80483e0 <__isoc99_scanf@plt>
+   0x08048530 <+75>:	lea    0x2c(%esp),%eax
+   0x08048534 <+79>:	mov    %eax,(%esp)
+   0x08048537 <+82>:	call   0x80484c4 <verify_pw>
+   0x0804853c <+87>:	mov    %eax,0x28(%esp)
+   0x08048540 <+91>:	cmpl   $0x0,0x28(%esp)
+   0x08048545 <+96>:	je     0x8048555 <main+112>
+   0x08048547 <+98>:	movl   $0x804865f,(%esp)
+   0x0804854e <+105>:	call   0x80483f0 <puts@plt>
+   0x08048553 <+110>:	jmp    0x804850f <main+42>
+   0x08048555 <+112>:	movl   $0x804866a,(%esp)
+   0x0804855c <+119>:	call   0x80483f0 <puts@plt>
+   0x08048561 <+124>:	mov    $0x0,%eax
+   0x08048566 <+129>:	mov    0x42c(%esp),%edx
+   0x0804856d <+136>:	xor    %gs:0x14,%edx
+   0x08048574 <+143>:	je     0x804857b <main+150>
+   0x08048576 <+145>:	call   0x80483d0 <__stack_chk_fail@plt>
+   0x0804857b <+150>:	leave  
+   0x0804857c <+151>:	ret    
+End of assembler dump.
+(gdb)
+
+This is the virtual address we need: 0x08048545. Now we have VA
+already, the next step is to get Load Address:
+
+shawn@bt:/home/SCFE/security/crack_me$ readelf -l verify_pw | grep LOAD | awk '{print $3}' | head -n 1
+0x08048000
+
+Here it is: 0x08048000". 
+
+shawn@bt:/home/SCFE/security/crack_me$ objdump -D verify_pw | grep 8048545
+ 8048545:	74 0e                	je     8048555 <main+0x70>
+
+The "0x74" is the op-code of "je" instruction. We need to calculate
+the file offset by the formula above:
+
+0x08048545 - 0x08048000 = 0x545
+
+We have everything we need now. Use hexedit replace "0x74"(je) with
+"0x75"(jne) in the offset 0x545:
+
+------------------------------------------------------------------------------------------------------+
+00000540   83 7C 24 28  00 74 0E C7  04 24 5F 86  04 08 E8 9D  FE FF FF EB  BA C7 04 24  6A 86 04 08  |
+------------------------------------------------------------------------------------------------------+
+                                          |   |
+                                          |   |
+                                          |   |
+                                          \ * /
+------------------------------------------------------------------------------------------------------+
+00000540   83 7C 24 28  00 75 0E C7  04 24 5F 86  04 08 E8 9D  FE FF FF EB  BA C7 04 24  6A 86 04 08  |
+------------------------------------------------------------------------------------------------------+
+
+Now, try to execute the binary again:
+
+shawn@bt:/home/SCFE/security/crack_me$ ./verify_pw 
+input ur password:
+noshit
+bingo!
+
+Bingo, isn't it>?
