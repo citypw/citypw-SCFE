@@ -5,9 +5,10 @@ OBJDUMP := objdump
 GUILE := guile
 TOOLS := ../tools
 TOP := $(shell pwd)
+V := @
 
 CFLAGS := $(CFLAGS) -O$(O_LEV) -nostdinc -fno-builtin -fno-stack-protector \
-        -I./ -MD -Wall -Wno-format -Wno-unused -Werror -std=c99 $(STABS)
+        -I./ -MD -Wall -Wno-format -Wno-unused -Werror -std=c99 $(STABS) -m32
 
 ### TARGET ###
 all: boot.img
@@ -20,8 +21,8 @@ boot.o: i386_boot.S boot_main.c
 boot: boot.o
 	@echo + ld $@ from $^
 	@mkdir -p $(@D)
-	$(V)$(LD) -N -e start -Ttext 0x7C00 -o $@.1st $^
-	$(V)$(OBJCOPY) -S -O binary $@.1st $@
+	$(V)$(LD) -melf_i386 -N -e start -Ttext 0x7C00 -o $@.1st $^
+	$(V)$(OBJCOPY) -S -R .eh_frame -R .eh_frame_hdr -O binary $@.1st $@
 	$(V)$(GUILE) -e main $(TOOLS)/sign.gl boot
 
 boot.img: boot
@@ -41,7 +42,7 @@ qemu: boot.img
 
 clean:
 	@echo "Cleaning all objs & generated files..."
-	$(V)rm -frd *.ld *.log .sw{o,p}
-	$(V)rm -frd *.o *.d *.img        
-	$(V)rm -frd *~ boot.*
+	$(V)rm -fr *.ld *.log .sw{o,p}
+	$(V)rm -fr *.o *.d *.img        
+	$(V)rm -fr *~ boot.*
 	$(V)test -e boot && rm -f boot || echo "No bootloader generated!"
