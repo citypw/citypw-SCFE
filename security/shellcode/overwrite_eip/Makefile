@@ -1,9 +1,10 @@
 CC=gcc
 AS=as
 LD=ld
-CFLAGS= -g -fno-stack-protector -mpreferred-stack-boundary=2
+CFLAGS= -g -fno-stack-protector
+
 # -fno-stack-protector: disable stack protection
-# -mprefered-stack-boundary=2: we need the stack is to be aligned on 2 byte boundary
+# -mprefered-stack-boundary=2: Do we need the stack aligne on 2 byte boundary for 32-bit platform?
 LIBS =
 
 APP = attack victim
