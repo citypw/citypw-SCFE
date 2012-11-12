@@ -1,0 +1,11 @@
+Shawn the R0ck - Nov 12, 2012
+
+null_test.c is a userspace example in NULL POINTER DEREFERENCE. It
+will crash the process while the program try to get the value:
+
+> 0x000000000040050f <+27>:	movl   $0x14,(%rax)
+
+Crash!!! That's so simple. But how a NULL POINTER DEREFERENCE bug
+leads to execute the arbitrary code? I think it's impossible in
+userspace but it has always been happening in kernelspace. I'll figure
+it out later how and why.
