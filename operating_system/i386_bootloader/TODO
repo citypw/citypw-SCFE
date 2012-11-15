@@ -1,6 +1,0 @@
-* reduce the code to a simplest one.
-
-* print "hello world" in the boot code.
-  (Actually, one may write his/her own kernel and print "hello world")
-  
-* do more intereting things in this bootloader
