@@ -1,26 +1,16 @@
-SCFE is an Open Educational Project.
+Shawn the R0ck - Nov 15, 2012
 
-** Who will be interested in SCFE?
-Programming beginner, Compute Science/Engineer student or anyone who want to
-learn computer programming. 
+my-SCFE is the record of my hacking journey. I'll share the sample
+code which I learned in this repo. 
 
-** What's in SCFE?
-Any "hello world" code/docs in all programming area.
-You may learn the sample code for any language you're instered in.
-You may find the simplest operating system or web server or compiler...
-You'll get what you want in your first time study it.
+* What makes it ticks?  
 
-** So, tell me what is SCFE?
-Well, maybe you want to know how to write a Game, and you have no idea, no
-books, no sample code. You don't know anything about what you're going to 
-learn. And SCFE will give you ABC about your target. 
-Nevertheless, it's not only Game. Anything computer programming involved.
+- Every programmer write a lot of sample code while hacking on some
+specific techniques. So do I. But the matter is I used to lost a lot
+of sample code I wrote before. I don't wanna forget what I learned. I
+think this repo will help
 
-** I know something, can I be a contributor?
-Yes! Of course! 
-Please make sure that your code/docs is easy to learn. The simplest is the best. 
-But it doesn't mean everything keep in print "hello world" level.
-"hello world" is a metaphor, which means "once you see it, you understand it".
+* License?
 
-
- 
+ - Dude, it's just sample code. It should not matter with license. But
+   I choose GPLv3 for just in case.
