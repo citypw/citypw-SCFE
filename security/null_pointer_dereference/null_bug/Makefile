@@ -14,4 +14,4 @@ shellcode:
 	$(CC) -o $@ $@.s -nostdlib -Ttext=0
 
 clean:
-	rm -f $(EXPS) *.o *.ko Module.* modules.* *.mod.c *~
+	rm -rf $(EXPS) *.o *.ko Module.* modules.* *.mod.c *~ .*
