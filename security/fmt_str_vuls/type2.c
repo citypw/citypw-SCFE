@@ -1,19 +1,15 @@
 #include <stdio.h>
 
-/* Indeed, it's harder to find the potential threat by automated tools */
-int error_msg(char *fmt)
+int main(int argc, char **argv)
 {
-	int i = 20;
-	char buf[56];
-	printf("i = %p\n", &i);
-	strcpy(buf, fmt);
-	printf(buf);
-	printf("i = %d\n", i);
-	return 0;
-}
+	char text[512];
+	int i = 100;
 
-int main(int argc, char *argv[])
-{
-	error_msg(argv[1]);
-	return 0;
+	printf("\n&i = %08x, value = %d\n", &i, i);
+	strcpy(text, argv[1]);
+	printf("input: %s\n", text);
+	printf(text);
+
+	printf("\n&i = %08x, value = %d\n", &i, i);
+	return (0);
 }
