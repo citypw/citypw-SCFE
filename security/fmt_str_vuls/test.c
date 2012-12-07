@@ -1,11 +1,19 @@
 #include <stdio.h>
 
-int main(void)
+void go(char *msg)
 {
-int x = 5;
-char buffer[52];
-printf("&x = %pn",&x);
-fgets(buffer,52,stdin);
-printf(buffer),
-printf("x = %dn",x);
+	int i = 0;
+	char tmpbuf[512];
+	
+	printf("i = %p\n", &i);
+	snprintf(tmpbuf, sizeof(tmpbuf), "helloworld\n");
+	tmpbuf[ sizeof(tmpbuf) - 1] = '\0';
+
+	printf("msg: %s, i = %d\n", tmpbuf, i);
+}
+
+int main(int argc, char *argv[])
+{
+	go(argv[1]);
+	return 0;
 }

