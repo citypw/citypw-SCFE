@@ -1,0 +1,17 @@
+Dec 20 2012
+
+Cryptography is a kind of new hacking field to me. It's quite
+interesting! It will be my night job shit for a while! For further
+reading:
+
+Applied Cryptography: Protocols, Algorithms, and Source Code in C 2nd edition - Bruce Schneier
+
+
+shawn@shawn-fortress /citypw-SCFE/security/crypto/simple_xor $ make
+gcc -g -I../../include    simple_xor.c   -o simple_xor
+done
+
+Usage: ./simple_xor [key] [input-file]
+
+example:
+shawn@shawn-fortress /citypw-SCFE/security/crypto/simple_xor $ ./simple_xor dude plaintext 
