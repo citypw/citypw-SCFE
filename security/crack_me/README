@@ -1,3 +1,28 @@
+Shawn the R0ck - Dec 27 2012
+
+It's nice to read TB's slide and it remind me LD_PRELOAD is a real
+issue that every GNU/Linux monkey-coder should care about. I wrote a
+few lines of POC to hijack a function which come from GNU C
+library. It's pretty simple, plz read the fucking source code!
+
+shawn@linux-ewle:~/crack_me> make
+gcc -g -I../../include  -o verify_pw verify_pw.c
+gcc -g -I../../include -fPIC -shared -o hijack_strcmp.so hijack_strcmp.c
+done
+shawn@linux-ewle:~/crack_me> ./verify_pw 
+input ur password:
+d
+incorrect!
+input ur password:
+^C
+shawn@linux-ewle:~/crack_me> export LD_PRELOAD="./hijack_strcmp.so"
+shawn@linux-ewle:~/crack_me> ./verify_pw 
+input ur password:
+3
+s1: 3, s2: 12345678
+bingo!
+
+
 Shawn the R0ck, Sep 6 2012
 
 +-----------------------------------------------------------------------------------
