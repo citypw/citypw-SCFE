@@ -3,7 +3,9 @@ Shawn the R0ck - Dec 27 2012
 It's nice to read TB's slide and it remind me LD_PRELOAD is a real
 issue that every GNU/Linux monkey-coder should care about. I wrote a
 few lines of POC to hijack a function which come from GNU C
-library. It's pretty simple, plz read the fucking source code!
+library. It's pretty simple, plz read the fucking source code! I
+tested it on Slackware 13.37 x86 platform and SLES 11 SP2 x86_64
+platform.
 
 shawn@linux-ewle:~/crack_me> make
 gcc -g -I../../include  -o verify_pw verify_pw.c
