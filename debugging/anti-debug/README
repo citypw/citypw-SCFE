@@ -1,0 +1,19 @@
+Dec 27 2012
+
+This is old school tricks about anti-debugging on GNU/Linux
+system. Thanks TB again! I tested it on SLES SP2 x86_64 platform.
+
+For further reading:
+http://www.ouah.org/linux-anti-debugging.txt
+
+shawn@linux-ewle:~/anti-debug> gdb -q anti-gdb
+Reading symbols from /home/shawn/anti-debug/anti-gdb...done.
+(gdb) r
+Starting program: /home/shawn/anti-debug/anti-gdb 
+Missing separate debuginfo for /lib64/ld-linux-x86-64.so.2
+Try: zypper install -C "debuginfo(build-id)=181860a35c8e9a0456dd6675f85c2eb0f062e956"
+Missing separate debuginfo for /lib64/libc.so.6
+Try: zypper install -C "debuginfo(build-id)=2f3040b47ab477519b3045352432f77c5bec1561"
+don't try to debug me...
+[Inferior 1 (process 8579) exited with code 01]
+(gdb)
