@@ -1,0 +1,33 @@
+Shawn the R0ck - Jan 6 2013
+
+According to Roman Drahtmueller's documentation[1], there are 3 ways to
+switch on/off to FIPS-140-2 compliant mode in GNU/Linux:
+
+1, Append "fips=1" to kernel cmd-line of grub's config file
+menu.lst. It works fine!
+
+2, export OPENSSL_FORCE_FIPS_MODE=1
+
+3, Use some libcrypto functions to set the FIPS MODE and get the
+current mode info, such as FIPS_mode_set(int onoff)/FIPS_mode(void)
+
+I wrote two simple examples, one is to check if the current OS support
+FIPS mode or not, another is to get the current FIPS mode and set the
+new one.
+
+shawn@linux-7kz0:~/check_fips_mode_linux> ./check_fips_mode_linux 
+FIPS_MODE: 0
+shawn@linux-7kz0:~/check_fips_mode_linux> ./get_set_fips_mode 1
+Current FIPS mode: 0
+After setting, current FIPS mode is: 1
+
+I tested these two programs on SLES 11 SP2. Before you compile these
+programs, you need install some packages at first:
+
+The FIPS can't work without hmac package:
+zypper in libopenssl0_9_8-hmac libopenssl0_9_8-hmac-32bit
+
+You also need libopenssl's header files:
+zypper in libopenssl-devel
+
+[1] http://webapp5.rrz.uni-hamburg.de/SuSe-Dokumentation/packages/openssl/README-FIPS.txt
