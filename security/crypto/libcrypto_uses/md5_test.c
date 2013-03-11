@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
         MD5_Update(&prog2_md5, argv[2], strlen(argv[2]));
         MD5_Final(prog_hash2, &prog2_md5);
 
-        for( i = 0; i < 16; i++){
+        for( i = 0; i < 16; ++i){
                 if(prog_hash[i] != prog_hash2[i]){
                         printf("Two values are not the same.\n%s: %s\n%s: %s\n", argv[1], prog_hash, argv[2], prog_hash2);
                         return 1;
