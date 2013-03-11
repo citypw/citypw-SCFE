@@ -7,10 +7,9 @@ NETTLE=nettle-2.6
 LIBTASN1=libtasn1-3.2
 P11=p11-kit-0.16.3
 GMP=gmp-5.1.1
-PREFIX=/home/john/john_test
+PREFIX=/home/shawn/shawn_test
 ROOT_DIR=$PWD
 
-echo $PWD/$GNUTLS
 if [ $# -ne 1 ]; then
 	echo "Usage: [ Compile packages automatically: yes/no]"
 	exit 1

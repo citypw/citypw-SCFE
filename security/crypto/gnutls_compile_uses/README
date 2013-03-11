@@ -1,0 +1,46 @@
+Shawn the R0ck - Mar 11 2013
+
+Before you dive into the detail source code of GNUTLS, you'd better
+compile/install it manually. But you known, hacker is always one of
+laziest type of person around the world. We want everything
+automatically. We did functional testing at first place, then we want
+to tranform it's boring shit to automation testing. Even in security
+ield, there are a bunch of guys( not lamer ones;-)) are trying to make
+the pentest/exploit shits automatically. I used to be an open source
+security QA guy and tried some automation tools( like ctcs) to satisfy
+my "lazy" requirement. Then I've starting maintain some security
+packages and fixing/backporting CVEs issues for "some" GNU/Linux
+distro. I've been doing this type of work for months but haven't
+compile the packages I'm maintaining with. What a shame;-)
+
+
+I wrote a simple script today and it will help if you wanna compile
+GNUTLS in manual:
+
+./get_repos.sh 
+Usage: [ Compile packages automatically: yes/no]
+
+Type:
+./get_repos.sh no  ===> only download the packages without compiliation
+./get_repos.sh yes ===> download the packages then compiliation
+
+If you choose "yes", you can check if it's really work:
+Open two terminals: T1, T2
+
+T1: Run the anonymous server with TLS
+john@sl13:~/gnutls_uses$ ./anonymous_serv 
+Server ready. Listening to port '5556'.
+
+- connection from 127.0.0.1, port 59923
+- Handshake was completed
+
+- Peer has closed the GnuTLS connection
+
+T2: Run the client
+john@sl13:~/gnutls_uses$ ./anonymous_cli 
+- Handshake was completed
+- Received 18 bytes: GET / HTTP/1.0
+
+That's it! Have fun with it!
+
+May L0rd's hacking spirit guide us!!!
