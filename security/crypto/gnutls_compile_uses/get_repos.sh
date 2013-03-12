@@ -7,7 +7,7 @@ NETTLE=nettle-2.6
 LIBTASN1=libtasn1-3.2
 P11=p11-kit-0.16.3
 GMP=gmp-5.1.1
-PREFIX=/home/shawn/shawn_test
+PREFIX=/home/john/john_test
 ROOT_DIR=$PWD
 
 if [ $# -ne 1 ]; then
@@ -18,44 +18,45 @@ fi
 COMPILE="$1"
 echo "Compile all pkgs, automatically: $COMPILE"
 
-if [ ! -d "gnutls-3.1.9" ]; then
-	wget ftp://ftp.gnutls.org/gcrypt/gnutls/v3.1/gnutls-3.1.9.1.tar.xz
-	xz -d gnutls-3.1.9.1.tar.xz && tar xvf gnutls-3.1.9.1.tar
+if [ ! -d "$GNUTLS" ]; then
+	wget ftp://ftp.gnutls.org/gcrypt/gnutls/v3.1/$GNUTLS.1.tar.xz
+	xz -d $GNUTLS.tar.xz && tar xvf $GNUTLS.tar
 fi
 
-if [ ! -d "nettle-2.6" ]; then
-	wget ftp://ftp.lysator.liu.se/pub/security/lsh/nettle-2.6.tar.gz
-	tar zxvf nettle-2.6.tar.gz
+if [ ! -d "$NETTLE" ]; then
+	wget ftp://ftp.lysator.liu.se/pub/security/lsh/$NETTLE.tar.gz
+	tar zxvf $NETTLE.tar.gz
 fi
 
-if [ ! -d "libtasn1-3.2" ]; then
-	wget http://ftp.gnu.org/gnu/libtasn1/libtasn1-3.2.tar.gz
-	tar zxvf libtasn1-3.2.tar.gz
+if [ ! -d "$LIBTASN1" ]; then
+	wget http://ftp.gnu.org/gnu/libtasn1/$LIBTASN1.tar.gz
+	tar zxvf $LIBTASN1.tar.gz
 fi
 
-if [ ! -d "p11-kit-0.16.3" ]; then
-	wget http://p11-glue.freedesktop.org/releases/p11-kit-0.16.3.tar.gz
-	tar zxvf p11-kit-0.16.3.tar.gz
+if [ ! -d "$P11" ]; then
+	wget http://p11-glue.freedesktop.org/releases/$P11.tar.gz
+	tar zxvf $P11.tar.gz
 fi
 
-if [ ! -d "gmp-5.1.1" ]; then
-	wget ftp://ftp.gnu.org/gnu/gmp/gmp-5.1.1.tar.bz2
-	tar jxvf gmp-5.1.1.tar.bz2
+if [ ! -d "$GMP" ]; then
+	wget ftp://ftp.gnu.org/gnu/gmp/$GMP.tar.bz2
+	tar jxvf $GMP.tar.bz2
 fi
 
 if [ "$COMPILE" == "yes" ]; then
-cat << EOF >> ~/.bashrc
-ROOT_SHAWN=$PREFIX
-
-export PATH=$PATH:$ROOT_SHAWN/bin:$ROOT_SHAWN/sbin:$JAVA_HOME/bin
-
-C_INCLUDE_PATH=$ROOT_SHAWN/include:/opt/AMDAPP/include
-CPLUS_INCLUDE_PATH=$ROOT_SHAWN/include
-LD_LIBRARY_PATH=$ROOT_SHAWN/lib
-LIBRARY_PATH=$ROOT_SHAWN/lib
-
-export C_INCLUDE_PATH LD_LIBRARY_PATH
-EOF
+#cat << EOF >> ~/.bashrc
+#ROOT_SHAWN=$PREFIX
+#
+#export PATH=$PATH:$ROOT_SHAWN/bin:$ROOT_SHAWN/sbin:$JAVA_HOME/bin
+#
+#C_INCLUDE_PATH=$ROOT_SHAWN/include:/opt/AMDAPP/include
+#CPLUS_INCLUDE_PATH=$ROOT_SHAWN/include
+#LD_LIBRARY_PATH=$ROOT_SHAWN/lib
+#LIBRARY_PATH=$ROOT_SHAWN/lib
+#
+#export C_INCLUDE_PATH LD_LIBRARY_PATH
+#EOF
+#source ~/.bashrc
 	cd $ROOT_DIR/$LIBTASN1
 	./configure --prefix=$PREFIX
 	make && make install
