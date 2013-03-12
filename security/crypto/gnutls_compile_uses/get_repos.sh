@@ -19,27 +19,37 @@ COMPILE="$1"
 echo "Compile all pkgs, automatically: $COMPILE"
 
 if [ ! -d "$GNUTLS" ]; then
-	wget ftp://ftp.gnutls.org/gcrypt/gnutls/v3.1/$GNUTLS.1.tar.xz
-	xz -d $GNUTLS.tar.xz && tar xvf $GNUTLS.tar
+	if [ ! -f "$GNUTLS.1.tar" ]; then
+		wget ftp://ftp.gnutls.org/gcrypt/gnutls/v3.1/$GNUTLS.1.tar.xz
+	fi
+	xz -d $GNUTLS.1.tar.xz && tar xvf $GNUTLS.1.tar
 fi
 
 if [ ! -d "$NETTLE" ]; then
-	wget ftp://ftp.lysator.liu.se/pub/security/lsh/$NETTLE.tar.gz
+	if [ ! -f "$NETTLE.tar.gz" ]; then
+		wget ftp://ftp.lysator.liu.se/pub/security/lsh/$NETTLE.tar.gz
+	fi
 	tar zxvf $NETTLE.tar.gz
 fi
 
 if [ ! -d "$LIBTASN1" ]; then
-	wget http://ftp.gnu.org/gnu/libtasn1/$LIBTASN1.tar.gz
+	if [ ! -f "$LIBTASN1.tar.gz" ]; then
+		wget http://ftp.gnu.org/gnu/libtasn1/$LIBTASN1.tar.gz
+	fi
 	tar zxvf $LIBTASN1.tar.gz
 fi
 
 if [ ! -d "$P11" ]; then
-	wget http://p11-glue.freedesktop.org/releases/$P11.tar.gz
+	if [ ! -f "$P11.tar.gz" ]; then
+		wget http://p11-glue.freedesktop.org/releases/$P11.tar.gz
+	fi
 	tar zxvf $P11.tar.gz
 fi
 
 if [ ! -d "$GMP" ]; then
-	wget ftp://ftp.gnu.org/gnu/gmp/$GMP.tar.bz2
+	if [ ! -f "$GMP.tar.bz2" ]; then
+		wget ftp://ftp.gnu.org/gnu/gmp/$GMP.tar.bz2
+	fi
 	tar jxvf $GMP.tar.bz2
 fi
 
