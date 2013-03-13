@@ -1,3 +1,21 @@
+Shawn the R0ck - Mar 13 2013
+
+Test platform:
+OS: Slackware 13.37
+---------------------------
+GNUTLS=gnutls-3.0.13
+NETTLE=nettle-2.4
+LIBTASN1=libtasn1-2.11
+P11=p11-kit-0.16.3
+GMP=gmp-5.0.4
+--------------------------
+GNUTLS=gnutls-3.1.9
+NETTLE=nettle-2.6
+LIBTASN1=libtasn1-3.2
+P11=p11-kit-0.16.3
+GMP=gmp-5.1.1
+--------------------------
+
 Shawn the R0ck - Mar 11 2013
 
 Before you dive into the detail source code of GNUTLS, you'd better
