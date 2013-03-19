@@ -1,6 +1,5 @@
 organization = GnuTLS test server
-cn = test.gnutls.org
+cn = sl13.sl13.org
 tls_www_server
 encryption_key
 signing_key
-dns_name = test.gnutls.org

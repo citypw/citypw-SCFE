@@ -55,10 +55,14 @@ int main (void)
    */
   gnutls_init (&session, GNUTLS_CLIENT);
 
+  /*
   gnutls_session_set_ptr (session, (void *) "my_host_name");
   gnutls_server_name_set (session, GNUTLS_NAME_DNS, "my_host_name", 
-                          strlen("my_host_name"));
+                          strlen("my_host_name"));*/
 
+  gnutls_session_set_ptr (session, (void *) "sl13.sl13.org");
+  gnutls_server_name_set (session, GNUTLS_NAME_DNS, "sl13.sl13.org", 
+                          strlen("sl13.sl13.org"));
   /* Use default priorities */
   ret = gnutls_priority_set_direct (session, "NORMAL", &err);
   if (ret < 0)
