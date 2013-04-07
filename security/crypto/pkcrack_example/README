@@ -1,0 +1,46 @@
+Shawn the R0c - Apr 7 2013
+
+Step 1:
+Download pkcrack: http://www.unix-ag.uni-kl.de/~conrad/krypto/pkcrack/pkcrack-1.2.2.tar.gz
+Compile it with *make*
+
+
+Step 2:
+Create the example zip format files:
+
+Encrypted file:
+shawn@shawn-fortress /tmp $ zip -e test.zip 1 2
+Enter password:  // I typed "1234"
+Verify password: 
+updating: 1 (deflated 60%)
+updating: 2 (deflated 26%)
+
+Plain zip file:
+shawn@shawn-fortress /tmp $ zip t2.zip 2
+
+Step 3:
+Crack it....
+
+shawn@shawn-fortress /tmp $ pkcrack -C test.zip -c "2" -P t2.zip -p 2 -d dec.zip -a
+Files read. Starting stage 1 on Sun Apr  7 15:57:42 2013
+Generating 1st generation of possible key2_139 values...done.
+Found 4194304 possible key2-values.
+Now we're trying to reduce these...
+Done. Left with 62563 possible Values. bestOffset is 24.
+Stage 1 completed. Starting stage 2 on Sun Apr  7 15:57:48 2013
+Strange... had a false hit.
+Strange... had a false hit.
+Strange... had a false hit.
+Strange... had a false hit.
+Strange... had a false hit.
+Ta-daaaaa! key0=348e6771, key1=cecf3c76, key2=51a09805
+Probabilistic test succeeded for 120 bytes.
+Ta-daaaaa! key0=348e6771, key1=cecf3c76, key2=51a09805
+Probabilistic test succeeded for 120 bytes.
+Stage 2 completed. Starting zipdecrypt on Sun Apr  7 16:23:17 2013
+Decrypting 1 (3144b387e3cd46b41455017f)... OK!
+Decrypting 2 (8aec344bd19f7751cfbb0a7f)... OK!
+Finished on Sun Apr  7 16:23:17 2013
+
+Step 4:
+Check the file dec.zip
