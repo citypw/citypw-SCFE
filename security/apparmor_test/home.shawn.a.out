@@ -1,0 +1,11 @@
+# Last Modified: Wed May 22 13:24:31 2013
+#include <tunables/global>
+
+/home/shawn/a.out {
+  #include <abstractions/base>
+
+  /home/shawn/a.out mr,
+  /home/shawn/hello r,
+  /home/shawn/world w,
+   network stream,
+}
