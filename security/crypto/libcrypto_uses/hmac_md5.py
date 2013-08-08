@@ -6,16 +6,14 @@
 #        key = hash(key) // keys longer than blocksize are shortened
 #    end if
 #    if (length(key) < blocksize) then
-#        key = key ∥ [0x00 * (blocksize - length(key))] // keys shorter than blocksize are zero-padded ('∥' is concatenation) 
+#        key = key || [0x00 * (blocksize - length(key))] // keys shorter than blocksize are zero-padded ('||' is concatenation) 
 #    end if
 #   
-#    o_key_pad = [0x5c * blocksize] ⊕ key // Where blocksize is that of the underlying hash function
-#    i_key_pad = [0x36 * blocksize] ⊕ key // Where ⊕ is exclusive or (XOR)
+#    o_key_pad = [0x5c * blocksize] xor key // Where blocksize is that of the underlying hash function
+#    i_key_pad = [0x36 * blocksize] xor key // Where xor is exclusive or (XOR)
 #   
-#    return hash(o_key_pad ∥ hash(i_key_pad ∥ message)) // Where '∥' is concatenation
+#    return hash(o_key_pad || hash(i_key_pad || message)) // Where '||' is concatenation
 # end function
-
-#!/usr/bin/env python
 
 from hashlib import md5
 
