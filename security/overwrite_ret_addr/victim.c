@@ -8,7 +8,7 @@
 void test(const char *input)
 {
   int x; /* integer variable need 4-bytes in memory */
-  char buf[10];
+  char buf[10]; /* buf[1024] for testing exploit */
   strcpy(buf, input);
   printf("%s \n", buf);
 }
