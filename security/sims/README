@@ -93,7 +93,10 @@ between protection and bypassing protection in this area will be explained
 further.
 
 gcc options: -fno-stack-protector, -fstack-protector -fstack-protector-all
-
+Check the symbols in an elf file: 
+#readelf -s ./a.out | grep stack_chk_fail
+     3: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND __stack_chk_fail@GLIBC_2.4 (3)
+    52: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND __stack_chk_fail@@GLIBC_2
 
 *) NX
 
@@ -102,7 +105,8 @@ emulation. Take a look: http://en.wikipedia.org/wiki/NX_bit
 
 in gcc's options, NX is enable by default. If you want to turn it off,
 use "-z execstack".
-
+shawn@shawn-fortress ~ $ readelf -l a.out | grep GNU_STACK
+  GNU_STACK      0x000000 0x0000000000000000 0x0000000000000000 0x000000 0x000000 RW  0x8
 
 *) RELRO
 
@@ -111,9 +115,24 @@ RELocation Read-Only.
 Turn it on: -z norelro 
 Turn it off: -z now
 
+Check elf header to find partial-RELRO:
+shawn@shawn-fortress ~ $ readelf -l a.out | grep GNU_RELRO
+  GNU_RELRO      0x0000000000000e28 0x0000000000600e28 0x0000000000600e28
+
+Check elf's dynamic sections to find fully-RELRO:
+shawn@shawn-fortress ~ $ readelf -d a.out | grep BIND_NOW
+ 0x0000000000000018 (BIND_NOW) 
 
 *) PIE
 
 http://en.wikipedia.org/wiki/Position-independent_code
 
-gcc option: -pie, it only work when kernel provides ASLR.
+gcc option: -pie, it only work for sec mitigation when kernel provides ASLR.
+
+no PIE:
+shawn@shawn-fortress ~ $ readelf -h a.out | grep "Type:[[:space:]]*EXEC"
+  Type:                              EXEC (Executable file)
+
+PIE:
+shawn@shawn-fortress ~ $ readelf -h a.out | grep "Type:[[:space:]]*DYN"
+  Type:                              DYN (Shared object file)
