@@ -1,0 +1,17 @@
+Shawn the R0ck - Dec 5 2013
+-----------------------------
+It's just an example to see how RPATH works...
+
+shawn@shawn-fortress /ld $ gcc -shared -fPIC libb2.c -o libB2.so
+shawn@shawn-fortress /ld $ sudo mv libB2.so /usr/lib/libB.so
+shawn@shawn-fortress /ld $ gcc -shared -fPIC libb1.c -o libB.so
+shawn@shawn-fortress /ld $ gcc test.c -ldl
+shawn@shawn-fortress /ld $ ./a.out 
+hello from funcA
+Hello from funcB 2
+main: 12
+shawn@shawn-fortress /ld $ gcc test.c -ldl -Wl,--rpath=.
+shawn@shawn-fortress /ld $ ./a.out 
+hello from funcA
+Hello from funcB 1
+main: 12

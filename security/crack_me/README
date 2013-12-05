@@ -1,3 +1,72 @@
+Shawn the R0ck - Dec 5 2013
+
+Find setuid() programs:
+find /bin/ -type f -perm -4000
+
+Let's check if anything we could use to exp there:
+
+shawn@d6-test:~$ ls -l /lib/ld-linux.so.2 
+lrwxrwxrwx 1 root root 25 Dec 31  2012 /lib/ld-linux.so.2 -> i386-linux-gnu/ld-2.13.so
+shawn@d6-test:~$ ls -l /lib/i386-linux-gnu/ld-2.13.so 
+-rwxr-xr-x 1 root root 117960 Dec 31  2012 /lib/i386-linux-gnu/ld-2.13.so
+shawn@d6-test:~$ cp /usr/bin/l
+last               lexgrog            loadunimap         lsof
+lastb              lft                locale             lspci
+lastlog            lft.db             localedef          lspgpot
+lcf                libnetcfg          locate             lsusb
+ld                 libtool            lockfile           lzcat
+ld.bfd             libtoolize         logger             lzcmp
+ldd                line               logname            lzdiff
+ld.gold            link               logresolve         lzegrep
+less               linux32            look               lzfgrep
+lessecho           linux64            lorder             lzgrep
+lessfile           linux-boot-prober  lsattr             lzless
+lesskey            linux-version      lsb_release        lzma
+lesspipe           lnstat             lscpu              lzmainfo
+lex                loadkeys           lsinitramfs        lzmore
+shawn@d6-test:~$ cp /bin/ls .
+shawn@d6-test:~$ chmod a-x ls
+shawn@d6-test:~$ ./ls
+-bash: ./ls: Permission denied
+shawn@d6-test:~$ /lib/ld-linux.so.2 ./ls 
+a.out
+fuc_alert.c
+id
+libmnl
+libnftables
+linux
+linux-firmware-image-3.12.0-rc3+_3.12.0-rc3+-2_i386.deb
+linux-headers-3.12.0-rc3+_3.12.0-rc3+-2_i386.deb
+linux-image-3.12.0-rc3+_3.12.0-rc3+-2_i386.deb
+linux-image-3.12.0-rc3+-dbg_3.12.0-rc3+-2_i386.deb
+linux-libc-dev_3.12.0-rc3+-2_i386.deb
+ls
+nftables
+openssl-1.0.1e
+openssl-1.0.1e.tar.bz2
+poc.c
+shawn@d6-test:~$ /lib/i386-linux-gnu/ld-2.13.so ./ls
+a.out
+fuc_alert.c
+id
+libmnl
+libnftables
+linux
+linux-firmware-image-3.12.0-rc3+_3.12.0-rc3+-2_i386.deb
+linux-headers-3.12.0-rc3+_3.12.0-rc3+-2_i386.deb
+linux-image-3.12.0-rc3+_3.12.0-rc3+-2_i386.deb
+linux-image-3.12.0-rc3+-dbg_3.12.0-rc3+-2_i386.deb
+linux-libc-dev_3.12.0-rc3+-2_i386.deb
+ls
+nftables
+openssl-1.0.1e
+openssl-1.0.1e.tar.bz2
+poc.c
+
+
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/test/lib
+if LD_LIBRARY_PATH was not set before, then you would get :/test/lib, which the ":" would be treated as current working directory.
+
 Shawn the R0ck - Dec 27 2012
 
 It's nice to read TB's slide and it remind me LD_PRELOAD is a real
