@@ -13,7 +13,7 @@ __attribute__ ((__nothrow__)) my_memcpy(void *__restrict __dest,
 					__const void *__restrict __src,
 					size_t __len)
 {
-	printf("%d\n", __builtin_object_size(__dest, 0));
+	printf("%ld\n", __builtin_object_size(__dest, 0));
 	return __my_memcpy_chk(__dest, __src, __len,
 			       __builtin_object_size(__dest, 0));
 }
@@ -37,6 +37,5 @@ int main(int argc, char *argv[])
 	}
 
 	printf(" my_memcpy() done!\n");
-	printf("%d\n", buf_len);
 	return 0;
 }
