@@ -1,3 +1,13 @@
+Shawn the R0ck, Dec 18 2013
+
+memcpy_foritfy sim: __builtin_object_size()[1] would examine the the
+size of object, which a pointer points to, only if known at compile
+time. This is a fuc*ing trick from GCC mitigation. Well, my hacking
+journey was too slow in past 1 year, weren't I? Probably I would speed
+up in 2014 if I could;-)
+
+[1] http://gcc.gnu.org/onlinedocs/gcc/Object-Size-Checking.html
+
 Shawn the R0ck, Aug 15 2012
 
 Just ignore the below:
