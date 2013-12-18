@@ -11,28 +11,27 @@
 #include <stdlib.h>
 int main()
 {
-	FILE *fp;
-	int ret;
-	char c = 0;
-	
-	fp = fopen("/dev/urandom", "r");
-	if(fp == NULL){
-		fprintf(stderr, "fp is null\n");
-		exit(1);
-	}
+       FILE *fp;
+       int ret;
 
-	int reslen = fread(&ret, sizeof(int), 1, fp);
+       fp = fopen("/dev/urandom", "r");
+       if(fp == NULL){
+               fprintf(stderr, "fp is null\n");
+               exit(1);
+       }
 
-	printf("Address:\n0x%x\n", ret);
+       int reslen = fread(&ret, sizeof(int), 1, fp);
 
-	fclose(fp);
+       printf("0x%x\n", ret);
 
-//	ret = 0;
-	unsigned char *p = (unsigned char*) &ret;
-	p[ sizeof(ret) - 1] = 0x80;
-	p[ sizeof(ret) -2] = 0x00;
-	
-	printf("0x%x\n", ret);
+       fclose(fp);
 
-	return 0;
+       ret = 0;
+       unsigned char *p = (unsigned char*) &ret;
+       p[ sizeof(ret) - 1] = 255;
+       p[ sizeof(ret) -2] = '\n';
+
+       printf("0x%x\n", ret);
+
+       return 0;
 }
