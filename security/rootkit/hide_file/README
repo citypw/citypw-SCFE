@@ -1,0 +1,164 @@
+Shawn the R0ck - Feb 6 2014
+
+I've wasted a lot of time in 2013. I've always find some shity
+execuses, like "I'm fucking busy recently" to delay my hacking journey
+of kernel rootkit. Thank L0rd! I found a slot during Chinese new year
+vacation at my hometown. I begun the adventure of rootkit
+hacking. I've read a bunch of great Phrack papers from the old good
+hacking days. It's old but it'd help.
+
+---------------------------------------------------------------
+[Weakening the Linux Kernel, Phrack Magazine Volume 8, Issue 52
+January 26, 1998, article 18 of 20]
+http://www.phrack.org/issues.html?issue=52&id=18&mode=txt
+
+[Advances in Kernel Hacking, Volume 0x0b, Issue 58, Phile #0x06 of
+0x0e]
+http://www.phrack.org/issues.html?issue=58&id=6&mode=txt
+
+[Handling Interrupt Descriptor Table for fun and profit, Volume 0x0b,
+Issue 59, Phile #0x04 of 0x12]
+http://www.phrack.org/issues.html?issue=59&id=4&mode=txt
+
+[Kernel Rootkit Experiences, Volume 0x0b, Issue 61, Phile 0x0e of
+0x0f]
+http://www.phrack.org/issues.html?issue=61&id=14&mode=txt
+
+[Mistifying the debugger, Volume 0x0c, Issue 65, Phile #0x08 of
+0x0f]
+http://www.phrack.org/issues.html?issue=65&id=8&mode=txt
+
+Especially thanks to THC's paper, which was released in 1999:
+[Complete Linux Loadable Kernel Modules]
+https://www.thc.org/papers/LKM_HACKING.html
+---------------------------------------------------------------
+
+I wrote a simple rootkit that can only hide a specific file. Just a
+few old school steps could make its feature possible:
+
+Firstly, we need to retrieve the system call table. But it's no longer
+exported since 2.6. Fortunately, there's still a few system calls are
+exported. sys_close() is one of them:
+--------------------------------------
+root@d6-test:/home/shawn# grep sys_close /boot/System.map-3.13.0
+c10e0aa1 T sys_close
+c140fdc4 R __ksymtab_sys_close
+c141815c r __kcrctab_sys_close
+c1420e33 r __kstrtab_sys_close
+--------------------------------------
+
+I used a brute force way to locate that system call. I learned it from
+memset's blog:
+https://memset.wordpress.com/2011/03/18/syscall-hijacking-dynamically-obtain-syscall-table-address-kernel-2-6-x-2/
+
+Start mem addr would be 0xc0000000, then it would try it repeatly unti
+it locate sys_close()'s addr.
+
+Then, write protection bit in cr0 has to be shut down. WP bit is the
+16th bit in cr0 register.
+
+31  30  29  28          19  18  17  16  15         6  5  4  3  2  1  0
++----------------------------------------------------------------------+
+|PG|CD |NW|-----------------|AM|---|WP|--------------|NE|ET|TS|EM|MP|PE|
++----------------------------------------------------------------------+
+
+After we done above steps, we are able to hijack the system call we
+want. Here I choose to hijack getdents64(). Why? Because all I wanna
+do is hide a specific file from "ls". Let's see what "ls" would
+usually do:
+------------------------------------------
+// begin.........
+execve("/bin/ls", ["ls"], [/* 16 vars */]) = 0
+brk(0)                                  = 0x8366000
+access("/etc/ld.so.nohwcap", F_OK)      = -1 ENOENT (No such file or directory)
+mmap2(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0xb7791000
+access("/etc/ld.so.preload", R_OK)      = -1 ENOENT (No such file or directory)
+open("/etc/ld.so.cache", O_RDONLY)      = 3
+fstat64(3, {st_mode=S_IFREG|0644, st_size=19346, ...}) = 0
+.......................
+.......................
+.......................
+// look, that's it
+getdents64(3, /* 17 entries */, 32768)  = 544
+getdents64(3, /* 0 entries */, 32768)   = 0
+close(3)                                = 0
+fstat64(1, {st_mode=S_IFCHR|0620, st_rdev=makedev(136, 2), ...}) = 0
+mmap2(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0xb7790000
+.......................
+// then it would display them in the standard out(1)
+write(1, "a.out  dirent.c  dirent.c~  insi"..., 107a.out  dirent.c  dirent.c~  insight-lab  libmnl  libnftables  linux-3.13  linux-3.13.tar  my_tmp  nftables
+) = 107
+.......................
+------------------------------------------
+
+The only struct from kernel we have to face is: 
+-------------------------------------------------------------------
+           struct linux_dirent {
+               unsigned long  d_ino;     /* Inode number */
+               unsigned long  d_off;     /* Offset to next linux_dirent */
+               unsigned short d_reclen;  /* Length of this linux_dirent */
+               char           d_name[];  /* Filename (null-terminated) */
+                                   /* length is actually (d_reclen - 2 -
+                                      offsetof(struct linux_dirent, d_name) */
+               /*
+               char           pad;       // Zero padding byte
+               char           d_type;    // File type (only since Linux 2.6.4;
+                                         // offset is (d_reclen - 1))
+               */
+
+           }
+-------------------------------------------------------------------
+
+d_reclen is size of the current linux_dirent64, it does matters. Plz
+read the fucking source code for any detail.
+
+So a simple rootkit's big picture should like this:
+
++------------------------------------------------------+
+|          U S E R             S P A C E               |
++------------------------------------------------------+
+                           |
+                           |
+                          \*/
+                       +--------+
+                       |  ls    |---------+
+                       +--------+         |
+                                         \*/ 
+                                   +--------------+
+                                   | getdents64() |
+                                   +--------------+
+                                          |
+                                         \*/                           +--------------------+
++----------------------------------------------------+                 |                    |
+|          K E R N E L             S P A C E         |<-------+       \*/                   |                 ROOTKIT loading
++----------------------------------------------------+        |   $===========$             |           $==========================$
+                                          |                   +---$ enable WP $         $========$      $ Bruce force syscall addr $
+                                          |                       $===========$         $ HIJACK $      $==========================$
+                                         \*/                                            $========$                  |
+                                    $=====================$                                  /*\                   \*/
+                                    $ hacked_getdents64() $                                   |             $============$
+                                    $=====================$                                   +-------------$ disable WP $
+                                             |                                                              $============$
+                                            \*/
+                                    $=======================$
+                                    $ getdents64() get info $
+                                    $=======================$
+                                                 |
+                                                \*/
+              +---------+---------+---------+---------------+
+              | dirent1 | dirent2 | dirent3 | ............. |
+              +---------------------------------------------+
+                   |         |        |            |
+                   |         |        |            |               $=============================$
+                   |         |        |            +-------------->$ compare hide_file name with $    $=============================$
+                   |         |        +--------------------------->$!@#$%^&*()_+=+_)(*&^%$#@!~   $--->$ hide it then, motherfucker! $
+                   |         +------------------------------------>$ direntn->d_name             $    $=============================$
+                   +---------------------------------------------->$=============================$
+                                                                            |
+                                                                            | N
+                                                                           \*/
+                                                                         $======$
+                                                                         $ DONE $
+                                                                         $======$
+
+May the L0rd's hacking spirit guide us!!!

