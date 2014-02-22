@@ -65,7 +65,7 @@ NULL byte (like the PLT on Linux/*BSD x86 systems). Such a protection is
 used on Fedora distributions.
 
 
-*) ESP (Executable Space Protection)
+*) NX <==> ESP (Executable Space Protection)
 
 The idea of this protection mechanism is very old and simple.
 Traditionally, overflows are exploited using shellcodes which means the
@@ -76,7 +76,15 @@ from executing. This cannot however prevent the attacker from calling
 already loaded code such as libraries or program functions. This led to the
 classical return-into-libc family of attacks. Nowadays all PAE or 64 bits
 x86 linux kernel are supporting this by default.
+ 
 
+This mechanism can be implemented by hardware or software
+emulation. Take a look: http://en.wikipedia.org/wiki/NX_bit
+
+in gcc's options, NX is enable by default. If you want to turn it off,
+use "-z execstack".
+shawn@shawn-fortress ~ $ readelf -l a.out | grep GNU_STACK
+  GNU_STACK      0x000000 0x0000000000000000 0x0000000000000000 0x000000 0x000000 RW  0x8
 
 *) ASLR (Address Space Layout Randomization)
 
@@ -109,15 +117,6 @@ Check the symbols in an elf file:
      3: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND __stack_chk_fail@GLIBC_2.4 (3)
     52: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND __stack_chk_fail@@GLIBC_2
 
-*) NX
-
-This mechanism can be implemented by hardware or software
-emulation. Take a look: http://en.wikipedia.org/wiki/NX_bit
-
-in gcc's options, NX is enable by default. If you want to turn it off,
-use "-z execstack".
-shawn@shawn-fortress ~ $ readelf -l a.out | grep GNU_STACK
-  GNU_STACK      0x000000 0x0000000000000000 0x0000000000000000 0x000000 0x000000 RW  0x8
 
 *) RELRO
 
