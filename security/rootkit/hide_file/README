@@ -8,6 +8,7 @@ hacking. I've read a bunch of great Phrack papers from the old good
 hacking days. It's old but it'd help.
 
 ---------------------------------------------------------------
+The oldest of old school one;-)
 [Weakening the Linux Kernel, Phrack Magazine Volume 8, Issue 52
 January 26, 1998, article 18 of 20]
 http://www.phrack.org/issues.html?issue=52&id=18&mode=txt
@@ -19,6 +20,10 @@ http://www.phrack.org/issues.html?issue=58&id=6&mode=txt
 [Handling Interrupt Descriptor Table for fun and profit, Volume 0x0b,
 Issue 59, Phile #0x04 of 0x12]
 http://www.phrack.org/issues.html?issue=59&id=4&mode=txt
+
+[Hijacking Linux Page Fault Handler: Exception Table, Volume 0x0b,
+Issue 0x3d, Phile #0x07 of 0x0f]
+http://www.phrack.org/issues.html?issue=61&id=7&mode=txt
 
 [Kernel Rootkit Experiences, Volume 0x0b, Issue 61, Phile 0x0e of
 0x0f]
