@@ -1,3 +1,51 @@
+Shawn the R0ck, Apr 16 2014
+
+ASLR for 32-bit:
+  ---------------------------------------
+ |       |       |      |
+  ---------------------------------------
+
+    ^       ^       ^
+    |       |       |_____ Page offset (12 bits)
+    |       |
+    |       |_____ Page table entry index (10 bits)
+    |
+    |_______ Page directory entry index (10 bits)
+
+PDE and OFFSET don't do the randomization.
+
+Bigger picture:
+high +-------------------+
+| Arguments              |
+|  and                   |
+| environment            |  
+| variables              |
+|                        |
+|------------------------|
+|
+| Stack (grow            |<--|--
+| downward               |   |
+|                        |   |
+| (grow upward)          |   |User Stack Frame
+|  Heap                  |   |( Mind the Gap )
+|                        |   |
+|                        <---|--
+|--------------------|
+|
+| BSS                |
+|                    |
+|                    |<-- uninitialized static data(block started by symbol)
+|                    |     such as, int wth-is-a;
+|--------------------|
+|
+|      Data
+|                    |<-- initilized static data(int fucme = 49)
+|--------------------|
+|
+|     Code
+|                    |  <-- text segment machine instructions
+Low +----------------+
+
 Shawn the R0ck, Dec 18 2013
 
 memcpy_foritfy sim: __builtin_object_size()[1] would examine the the
