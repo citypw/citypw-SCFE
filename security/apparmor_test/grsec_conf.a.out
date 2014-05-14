@@ -1,3 +1,58 @@
+role shawn u
+subject /  {
+    /               h
+    /bin                x
+    /dev                
+    /dev/grsec          h
+    /dev/kmem           h
+    /dev/log            h
+    /dev/mem            h
+    /dev/null           w
+    /dev/port           h
+    /dev/pts            rw
+    /dev/tty            rw
+    /etc                r
+    /etc/grsec          h
+    /etc/gshadow            h
+    /etc/gshadow-           h
+    /etc/ppp            h
+    /etc/samba/smbpasswd        h
+    /etc/shadow-            h
+    /etc/ssh            h
+    /home               
+    /home/shawn         rwxcd
+    /home/shawn/grsec_test      x
+    /home/shawn/my_tmp      
+    /home/shawn/world       w
+    /lib                rx
+    /lib/modules            h
+    /proc               
+    /proc/bus           h
+    /proc/filesystems       r
+    /proc/kallsyms          h
+    /proc/kcore         h
+    /proc/meminfo           r
+    /proc/modules           h
+    /proc/slabinfo          h
+    /proc/sys           h
+    /sbin               h
+    /sbin/insserv           
+    /selinux            
+    /tmp                rwcd
+    /usr                
+    /usr/bin            x
+    /usr/lib            r
+    /usr/local          
+    /usr/share          h
+    /usr/share/bash-completion/bash_completion  r
+    /usr/src            h
+    /var                h
+    /var/mail/shawn         
+    -CAP_ALL
+    bind    disabled
+    connect disabled
+}
+
 subject /home/shawn/grsec_test/a.out o {
         /                               h
         /bin                            h
