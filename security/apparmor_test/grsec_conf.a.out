@@ -1,0 +1,21 @@
+subject /home/shawn/grsec_test/a.out o {
+        /                               h
+        /bin                            h
+        /bin/dash                       h
+        /etc                            h
+        /etc/ld.so.cache                r
+        /etc/shadow                     r
+        /home                           h
+        /home/shawn
+        /home/shawn/grsec_test/a.out    x
+        /home/shawn/hello               r
+        /home/shawn/world               w
+        /lib                            h
+        /lib/i386-linux-gnu/i686/cmov/libc-2.13.so      rx
+        /lib/i386-linux-gnu/ld-2.13.so  x
+        -CAP_ALL
+        +CAP_DAC_OVERRIDE
+        bind    disabled
+        connect disabled
+}
+
