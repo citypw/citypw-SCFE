@@ -1,0 +1,5 @@
+Shawn the R0ck - June 16 2009
+
+1. copy the file "output-env.scm" to apache/cgi-bin
+2. start a mzscheme,run the content of tcp-server.scm on mzscheme
+3. test the output-env.scm on your web browser

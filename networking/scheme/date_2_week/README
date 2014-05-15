@@ -1,0 +1,6 @@
+Shawn the R0ck - June 2009
+
+1. start your apache server
+2. copy the file "date-to-week.html" to apache/htdocs
+3. copy the file "date-to-week.html" to apache/cgi-bin
+4. then you can test date-to-week.html on your web browser
