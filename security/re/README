@@ -1,0 +1,55 @@
+Prologue
+---------------------------
+    push ebp
+    mov ebp, esp
+    call function
+    add esp, 4 ; ( 3-byte) ==> pop ecx( 1-byte)
+    xor eax, eax; ( 2-byte) ==> mov eax, 0 ( 5-byte)
+---------------------------
+
+Epilogue
+---------------------------
+    leave   ; => mov esp, ebp; pop ebp
+    ret 0   ; returns control flow to the caller
+---------------------------
+
+Non-optimizing Keil + thumb mode + IDA:
+--------------------------
+    STMFD   SP!, {R4, LR} ; sp - x; push r4; push lr;
+    ADR     R0, aHelloWorld; r0 = pc +  offset of string"hello, world" => Position-independent code
+    BL      __2printf; call printf => write addr into the LR, then write addr of func to PC
+    MOV     R0, #0
+    LDMFD   SP!, {R4, PC};  sp + x; read from stack into  r4, pc;
+--------------------------
+
+Optimizing Xcode (LLVM) + ARM mode:
+--------------------------
+    STMFD   SP!, {R7, LR}
+    MOV     R0, #0X1686 ; copy the string "hello world" offset to the lower 16 bits
+    MOV     R7, SP  ; R7 is a frame pointer
+    MOVT    R0, #0  ; clear higher 16 bits
+    ADD     R0, PC, RO ; RO = PC + RO
+    BL      _puts
+    MOV     R0, #0
+    LDMFD   SP!, {R7, PC}
+--------------------------
+
+Optimizing Xcode (LLVM) + thumb-2 mode:
+-----------------------------
+80 b5        PUSH    {R7, LR}
+41 f2 d8 30  MOVW    R0, #0X13D8    ; clear lower 16 bits
+6f 46        MOV     R7, SP
+c0 f2 00 00  MOVT.W  R0, #0
+78 44        ADD     R0, PC
+01 f0 38 ea  BLX     _puts
+00 20        MOVS    R0, #0
+80 bd        POP     {R7, PC}
+------------------------------
+
+Thumb-2 instructions also begin with 0xfx or 0xex. BLX will save the
+RA in the LR and switch from thumb mode to ARM mode( or back).
+
+GCC-x86:
+----------------------------------
+Intel format:
+    gcc -S -masm=intel
