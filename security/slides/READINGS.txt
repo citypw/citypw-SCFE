@@ -1,0 +1,319 @@
+Hacking sP1rit
+-----------------------------------------------------------------------------
+A brief history of the Underground scene
+http://www.phrack.org/archives/issues/64/4.txt
+
+Perl, all truth are God's truth
+http://cos.polyamory.org/text/T/lwall-keynote.txt
+-----------------------------------------------------------------------------
+
+
+ELF stuff:
+-----------------------------------------------------------------------------
+SHARED LIBRARY CALL REDIRECTION VIA ELF PLT INFECTION
+http://www.phrack.org/archives/issues/56/7.txt
+
+Runtime Process Infection:
+http://www.phrack.org/archives/issues/59/8.txt
+
+More ELF buggery...:
+http://www.ouah.org/melfbuggery.html
+
+The Design and Implementation of Userland Exec
+https://raw.githubusercontent.com/grugq/grugq.github.com/master/docs/ul_exec.txt
+
+Remote Library Injection
+http://www.nologin.org/Downloads/Papers/remote-library-injection.pdf
+
+Reverse Engineering with LD_PRELOAD
+http://securityvulns.com/articles/reveng/
+
+RELRO: RELocation Read-Only
+https://isisblogs.poly.edu/2011/06/01/relro-relocation-read-only/
+-----------------------------------------------------------------------------
+
+
+GOT overwrites:
+-----------------------------------------------------------------------------
+Advances in format string exploitation 
+http://phrack.org/archives/issues/59/7.txt
+
+w00w00 on Heap Overflows
+http://www.cgsecurity.org/exploit/heaptut.txt
+
+Exploiting the heap
+http://www.win.tue.nl/~aeb/linux/hh/hh-11.html
+-----------------------------------------------------------------------------
+
+
+Forensics:
+-----------------------------------------------------------------------------
+Defeating Forensic Analysis on Unix
+http://phrack.org/archives/issues/59/6.txt
+-----------------------------------------------------------------------------
+
+
+Linux kernel rootkit:
+-----------------------------------------------------------------------------
+Weakening the Linux Kernel
+http://www.phrack.org/archives/issues/52/18.txt
+
+Advances in Kernel Hacking
+http://www.phrack.org/archives/issues/58/6.txt
+
+Handling Interrupt Descriptor Table for fun and profit:
+http://www.phrack.org/archives/issues/59/4.txt
+
+Hijacking Linux Page Fault Handler: Exception Table
+http://www.phrack.org/archives/issues/61/7.txt
+
+Kernel Rootkit Experiences
+http://www.phrack.org/archives/issues/61/14.txt
+
+Mistifying the debugger
+http://www.phrack.org/archives/issues/65/8.txt
+
+Especially thanks to THC's paper, which was released in 1999:
+[Complete Linux Loadable Kernel Modules]
+https://www.thc.org/papers/LKM_HACKING.html
+-----------------------------------------------------------------------------
+
+
+Kernel eXpl0it:
+-----------------------------------------------------------------------------
+Attacking the Core : Kernel Exploiting Notes
+http://www.phrack.org/archives/issues/64/6.txt
+-----------------------------------------------------------------------------
+
+
+GNU/Linux mA1ware:
+-----------------------------------------------------------------------------
+Needle
+http://hick.org/code/skape/papers/needle.txt
+-----------------------------------------------------------------------------
+
+
+APT reports:
+-----------------------------------------------------------------------------
+http://www.securelist.com/en/downloads/vlpdfs/unveilingthemask_v1.0.pdf
+http://reverse.put.as/wp-content/uploads/2014/06/ShakaCon6-FuckYouHackingTeam.pdf
+http://www.crowdstrike.com/sites/default/files/AdversaryIntelligenceReport_DeepPanda_0.pdf
+-----------------------------------------------------------------------------
+
+
+
+Books:
+-----------------------------------------------------
+
+*
++-----------------------------------------------------------------------+
+| S E C U R I T Y                                     | A U T H O R / s |
++-----------------------------------------------------------------------+
+| Security Engineering 2nd edition                    | Ross J. Anderson|
++-----------------------------------------------------------------------+
+| Beyond FearThinking Sensibly About Securityin an    |                 |
+| Uncertain World                                     | Bruce Schneier  |
++-----------------------------------------------------------------------+
+|
+
+
+* Nature-borned tech for the open environment
++-----------------------------------------------------------------------+
+| C R Y P T O G R A P H Y                             | A U T H O R / s |
++-----------------------------------------------------------------------+
+| APPLIED CRYPTOGRAPHY 2nd edition                    | Bruce Schneier  |
++-----------------------------------------------------------------------+
+| Cryptography Engineering                            | Bruce Schneier  |
++-----------------------------------------------------------------------+
+
+
+* 0ur FATHERs believed every turing machine can be eXpl0ited!!!
++-----------------------------------------------------------------------+
+| E X P O I T A T I O N                               | A U T H O R / s |
++-----------------------------------------------------------------------+ 
+| Hacking: The Art of Exploitation, 2nd Edition       | Jon Erickson    |
++-----------------------------------------------------------------------+
+| A Bug Hunter’s Diary                                | TOBIAS KLEIN    |
++-----------------------------------------------------------------------+
+| The Shellcoders Handbook 2nd edition                | A, H, L, R      |
++-----------------------------------------------------------------------+
+
+
+* WE ARE ANONYMOUS! WE ARE LEGION! WE ARE UNIX *USERS*! WE ARE OLD SCHOOL....
++-----------------------------------------------------------------------+
+| G N U / L I N U X                                   | A U T H O R / s |
++-----------------------------------------------------------------------+
+| HACKING EXPOSED LINUX 3rd edition                   | Many authors    |
++-----------------------------------------------------------------------+
+| Secure Programming for Linux and Unix HOWTO         | David A. Wheeler|
++-----------------------------------------------------------------------+
+
+
+* 0ne of m0st fascinating things: eVery HACKER'S story
++-------------------------------------------------------------------------+
+| H A C K E R, H A C K E R, H A C K E R ! ! !           | A U T H O R / s |
++-------------------------------------------------------------------------+
+| Hacker Ethics and the Spirit of the Information Age   | Pekka Hiemann   |
++-------------------------------------------------------------------------+
+| Hackers: Heroes of the Computer Revolution            | Steven Levy     |
++-------------------------------------------------------------------------+
+| Kingpin: How One Hacker Took Over the Billion-Dollar  |                 |
+| Cybercrime Underground                                | Kevin Poulsen   |
++-------------------------------------------------------------------------+
+| The Art of Intrusion                                  | Kevin Mitnick   |
++-------------------------------------------------------------------------+
+| Masters of Doom: How Two Guys Created an Empire       |                 |
+| and Transformed Pop Culture                           | David Kushner   |
++-------------------------------------------------------------------------+
+| Hackers and Painters: Big Ideas from the Computer Age | Paul Graham     |
++-------------------------------------------------------------------------+
+
+
+* rEmember: You are a detective now.....
++-----------------------------------------------------------------------------------+
+| C R I M E   S C E N E   I N V E S T I G A T I O N     | A U T H O R / s           |
++-----------------------------------------------------------------------------------+
+| The Art of Memory Forensics: Detecting Malware and    | Michael Ligh, Andrew Case |
+| Threats in Windows, Linux, and Mac Memory             | Jamie Levy, AAron Walters |
++-----------------------------------------------------------------------------------+
+| File System Forensic Analysis                         | Brian Carrier             |
++-----------------------------------------------------------------------------------+
+
+
+
+
+
+*** O P T I O N A L s:
+----------------------------------------------------------------------------
+
+* Hard to explain WTH is C0MPLEXITY, cu'z it's complicated
++--------------------------------------------------------------------------+
+| C O M P L E X I T Y                                 | A U T H O R / s    |
++--------------------------------------------------------------------------+
+| The Singularity is near                             | Ray Kurzweil       |
++--------------------------------------------------------------------------+
+| Complexity: The Emerging Science at the Edge        |                    |
+| of Order and Chaos                                  | M. Mitchell Waldrop|
++--------------------------------------------------------------------------+
+| Hidden Order: How Adaptation Builds Complexity      | John Holland       |
++--------------------------------------------------------------------------+
+| The Quark and the Jaguar: Adventures in the         |                    |
+| Simple and the Complex                              | Murray Gell-Mann   |
++--------------------------------------------------------------------------+
+| Out of Control: The New Biology of Machines, Social |                    |
+| Systems, and the Economic World                     | K K                |
++--------------------------------------------------------------------------+
+| What Technology Wants                               | K K                |
++--------------------------------------------------------------------------+
+| Shadows of the Mind: A Search for the Missing       |                    |
+| Science of Consciousness                            | Roger Penrose      |
++--------------------------------------------------------------------------+
+
+
+* They are not real..but really?
++--------------------------------------------------------------------------+
+| M Y T H O D O L O G Y  &  F I C T I O N             | A U T H O R / s    |
++--------------------------------------------------------------------------+
+| The Silmarillion                                    | J. R. R. Tolkien   |
++--------------------------------------------------------------------------+
+| The Trilogy of The Lord of the Rings                | J. R. R. Tolkien   |
++--------------------------------------------------------------------------+
+| Foundation Series                                   | Isaac Asimov       |
++--------------------------------------------------------------------------+
+| Interview with the Vampire                          | Anne Rice          |
++--------------------------------------------------------------------------+
+| The Vampire Lestat                                  | Anne Rice          |
++--------------------------------------------------------------------------+
+
+
+* D0n't try to compare the world view of Pharisees & Sadducees with
+* Heraclitus & Parmenides!@#$%^&*(
++-----------------------------------------------------------------------------+
+| J U D A I S M                                        | A U T H O R / s      |
++-----------------------------------------------------------------------------+
+| On Judaism                                           | Martin Buber         |
++-----------------------------------------------------------------------------+
+| God in Search of Man : A Philosophy of Judaism       | Abraham J. Hescher   |
++-----------------------------------------------------------------------------+
+| Essence of Judaism                                   | Leo Baeck            |
++-----------------------------------------------------------------------------+
+| Everyman's Talmud                                    | Abraham Cohen        |
++-----------------------------------------------------------------------------+
+| Nine Talmudic Readings                               | Emmanuel Levinas     | 
++-----------------------------------------------------------------------------+
+| A Short History of the Jewish People: From Legendary |                      |
+| Times to Modern Statehood                            | Raymond P. Scheindlin|
++-----------------------------------------------------------------------------+
+
+
+* UNITY & DIVERSITY
++-------------------------------------------------------------------------------+
+| C H R I S T I A N I T Y                              | A U T H O R / s        |
++-------------------------------------------------------------------------------+
+| The Institution of Christian Religion                | John Cavlin            |
++-------------------------------------------------------------------------------+
+| On the Trinity                                       | St.Augestine           |
++-------------------------------------------------------------------------------+
+| Augustine's Confessions                              | St.Augestine           |
++-------------------------------------------------------------------------------+
+| Making Sense of It All Pascal and the Meaning of Life| Thomas V. Morris       |
++-------------------------------------------------------------------------------+
+| Redeeming Science                                    | Vern Sheridan Poythress|
++-------------------------------------------------------------------------------+
+
+
+* OUR FUTURE IS DEPEND ON OUR PHILOSOPHY........
++-------------------------------------------------------------------------------+
+| I D E A S --- P H I L O S O P H I C A L              | A U T H O R / s        |
++-------------------------------------------------------------------------------+
+| Worldview: The History of a Concept                  | David K. Naugle        |
++-------------------------------------------------------------------------------+
+| Twilight of the Idols                                | Friedrich Nietzsche    |
++-------------------------------------------------------------------------------+
+| Thoughts                                             | Blaise Pascal          |
++-------------------------------------------------------------------------------+
+| A History of Western Philosophy                      | Bertrand Russell       |
++-------------------------------------------------------------------------------+
+| When Science Meets Religion: Enemies, Strangers,     |                        |
+| or Partners?                                         | Ian G. Barbour         |
++-------------------------------------------------------------------------------+
+| The Will to Power                                    | Friedrich Nietzsche    |
++-------------------------------------------------------------------------------+
+| The Consequences of Ideas: Understanding the         |                        |
+| Concepts that Shaped Our World                       | R. C. Sproul           | 
++-------------------------------------------------------------------------------+
+| The Protestant Ethic and the Spirit of Capitalism    |  Max Webber            |       
++-------------------------------------------------------------------------------+
+| The Matrix and Philosophy: Welcome to the Desert     |                        |
+| of the Real                                          | William Irwin          |
++-------------------------------------------------------------------------------+
+| The Great Philosophers                               | Karl Theodor Jaspers   |
++-------------------------------------------------------------------------------+
+| Truth or Consequences: The Promise & Perils          |                        |
+| of Postmodernism                                     | Millard J. Erickson    |
++-------------------------------------------------------------------------------+
+| Philosophical Fragments                              | Soren Aabye Kierkegaard|
++-------------------------------------------------------------------------------+
+| Mathematics in Western Culture                       | Morris Kline           |
++-------------------------------------------------------------------------------+
+| Mere Christianity                                    | C. S. Lewis            |
++-------------------------------------------------------------------------------+
+| Metaphysics                                          | Aristotle              |
++-------------------------------------------------------------------------------+
+| The Republic                                         | Plato                  |
++-------------------------------------------------------------------------------+
+| English Deism: Its Roots And Its Fruits              | John Orr               |
++-------------------------------------------------------------------------------+
+
+
+* ?
++-------------------------------------------------------------------------------+
+| S T O R Y                                            | A U T H O R / s        |
++-------------------------------------------------------------------------------+
+| My Life: A Spoken Autobiography                      | Fidel Castro           |
++-------------------------------------------------------------------------------+
+| Start-up Nation: The Story of Israel's Economic      |                        |
+| Miracle                                              | Saul Singer            |
++-------------------------------------------------------------------------------+
+| Wild at heart                                        | John Eldredge          | 
++-------------------------------------------------------------------------------+
