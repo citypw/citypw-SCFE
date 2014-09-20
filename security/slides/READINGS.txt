@@ -30,6 +30,9 @@ http://securityvulns.com/articles/reveng/
 
 RELRO: RELocation Read-Only
 https://isisblogs.poly.edu/2011/06/01/relro-relocation-read-only/
+
+A Whirlwind Tutorial on Creating Really Teensy ELF Executables for Linux 
+http://www.muppetlabs.com/~breadbox/software/tiny/teensy.html
 -----------------------------------------------------------------------------
 
 
