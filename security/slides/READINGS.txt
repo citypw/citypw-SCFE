@@ -64,6 +64,12 @@ http://www.phrack.org/archives/issues/52/18.txt
 Advances in Kernel Hacking
 http://www.phrack.org/archives/issues/58/6.txt
 
+Runtime kernel kmem patching
+http://althing.cs.dartmouth.edu/local/vsc07.html
+
+Linux on-the-fly kernel patching without LKM
+http://phrack.org/archives/issues/58/7.txt
+
 Handling Interrupt Descriptor Table for fun and profit:
 http://www.phrack.org/archives/issues/59/4.txt
 
