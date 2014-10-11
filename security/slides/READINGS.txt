@@ -36,6 +36,13 @@ http://www.muppetlabs.com/~breadbox/software/tiny/teensy.html
 -----------------------------------------------------------------------------
 
 
+ROP:
+-----------------------------------------------------------------------------
+Introduction to return oriented programming (ROP)
+http://codearcana.com/posts/2013/05/28/introduction-to-return-oriented-programming-rop.html
+-----------------------------------------------------------------------------
+
+
 GOT overwrites:
 -----------------------------------------------------------------------------
 Advances in format string exploitation 
@@ -69,6 +76,9 @@ http://althing.cs.dartmouth.edu/local/vsc07.html
 
 Linux on-the-fly kernel patching without LKM
 http://phrack.org/archives/issues/58/7.txt
+
+Malicious Code Injection via /dev/mem
+https://www.blackhat.com/presentations/bh-europe-09/Lineberry/BlackHat-Europe-2009-Lineberry-code-injection-via-dev-mem.pdf
 
 Handling Interrupt Descriptor Table for fun and profit:
 http://www.phrack.org/archives/issues/59/4.txt
