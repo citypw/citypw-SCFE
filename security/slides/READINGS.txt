@@ -80,6 +80,9 @@ http://phrack.org/archives/issues/58/7.txt
 Malicious Code Injection via /dev/mem
 https://www.blackhat.com/presentations/bh-europe-09/Lineberry/BlackHat-Europe-2009-Lineberry-code-injection-via-dev-mem.pdf
 
+Modern Linux Rootkits 301 - Bypassing modules_disabled security
+http://turbochaos.blogspot.hk/2013/10/writing-linux-rootkits-301_31.html
+
 Handling Interrupt Descriptor Table for fun and profit:
 http://www.phrack.org/archives/issues/59/4.txt
 
