@@ -22,6 +22,9 @@ http://www.ouah.org/melfbuggery.html
 The Design and Implementation of Userland Exec
 https://raw.githubusercontent.com/grugq/grugq.github.com/master/docs/ul_exec.txt
 
+Modern Userland Exec
+http://www.stratigery.com/userlandexec.html
+
 Remote Library Injection
 http://www.nologin.org/Downloads/Papers/remote-library-injection.pdf
 
