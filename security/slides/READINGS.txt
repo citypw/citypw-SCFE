@@ -38,6 +38,15 @@ http://www.muppetlabs.com/~breadbox/software/tiny/teensy.html
 
 ROP:
 -----------------------------------------------------------------------------
+Getting around non-executable stack (and fix)
+http://seclists.org/bugtraq/1997/Aug/63
+
+Defeating Solar Designer's Non-executable Stack Patch
+http://insecure.org/sploits/non-executable.stack.problems.html
+
+The advanced return-into-lib(c) exploits: PaX case study
+http://phrack.org/archives/issues/58/4.txt
+
 Introduction to return oriented programming (ROP)
 http://codearcana.com/posts/2013/05/28/introduction-to-return-oriented-programming-rop.html
 -----------------------------------------------------------------------------
