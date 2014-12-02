@@ -1,0 +1,502 @@
+原文：
+https://www.ssllabs.com/downloads/SSL_TLS_Deployment_Best_Practices_1.3.pdf
+
+译者: Shawn the R0ck，(后面校正的自己加到后面)
+
+SSL/TLS部署最佳实践
+作者：Ivan Ristić
+version 1.3 (17 September 2013)
+Copyright © 2012-2013 Qualys SSL Labs
+
+抽象：
+
+SSL/TLS是一个看似简单的技术。非常容易部署和让她跑起来，但是...她真的跑
+起来了吗。第一部分是真的---SSL很容易部署---但是她并不是那么容易正确的部
+署。为了保证SSL提供安全性，用户必须投入额外的精力去配置她。
+
+2009年，我们在SSL Labs( https://www.ssllabs.com/)开始了相关工作，因为我
+们想明白SSL到底是在怎么样被使用，我们也打算弥补SSL缺乏易用的工具和文档
+的局面。我们进行了对SSL使用情况的完整调查，以及实现了在线检测工具，但文
+档的缺乏依然存在。这份文档是解决文档问题的第一步。
+
+我们的目标是让已经不堪负重的系统管理员和程序员尽可能花费少量时间就能完
+成安全站点的部署，正是因为我们的目的如此，所以这份文档可能不够完备，因
+为只提供简单实用容易理解的建议。对于那些想了解更多信息的读者，可以看看
+Section 6。
+
+
+1. 私钥和证书
+
+SSL提供的安全质量完全依赖于私钥，私钥是安全证书的基础，而安全证书则是验
+证服务器身份的重要因素。
+
+
+1.1 使用2048位的私钥
+
+在你的所有服务器上使用2048位的RSA或者等价强度的ECDSA私钥。密钥的长度能
+保证在一定时间能的安全，如果你已经使用1024位的RSA，尽量替换它们。如果你
+的需求必须使用大于2048位的密钥，请考虑ECDSA，因为性能不错。
+
+
+1.2 保护私钥
+
+私钥是重要的财产，尽可能限制能接触到私钥的人。推荐策略包括：
+
+* 在一台可信的计算机(Shawn注:加固过的物理机器)上生成私钥和CSR(
+  Certificate Signing Requests)。有一些CA会为你生成密钥和CSR，但这样做
+  明显不妥。
+
+* 受密码保护的密钥可以阻止在备份系统中被截获
+
+* 在发现被"日"后，撤回老的证书，生成新的密钥和证书。
+
+* 每年更新证书，总是使用最新的私钥。
+
+
+1.3 确保覆盖到所有的主机名
+
+确保你的证书覆盖到你希望被访问的站点。比如你的主站是www.example.com，但
+你可能还有个www.example.net。你的目标就是避免无效证书警告，因为那会让你
+的用户产生疑惑从而影响对你的信任。
+
+即使你的服务器只有一个主机名配置，也要记得你不能控制用户是通过什么路径
+访问你的站点的，可能是其他的链接过来的。大部分情况下，你应该保证证书能
+在没有www前缀的情况下工作(比如，example.com和www.example.com)。所以这里
+原则就是：一个安全的WEB服务器应该有一个对所有DNS名称解析正常的证书配置。
+
+通配符证书( WIldcard certificates)有他们的应用场景，但应该避免使用，因
+为使用的话意味着暴露给很多人。换句话说，越少的人能访问私钥越好。
+
+
+1.4 从靠谱的CA那里获得证书
+
+选择一个对待安全比较认真的可靠CA( Certificate Authority)，在选择CA过程
+中可以考虑以下因素：
+
+* 对待安全的态度
+
+  大多的CA都会有常规的安全审计，但是一些会更在意安全一些。搞清楚哪些对
+  待安全的态度不是一件容易的事情，但一个简单的做法是看看他们在安全方面
+  的历史状况，他们如何应急被“日”以及如何从错误中学习。
+
+* 实际的市场占有率
+
+* 业务重心
+
+* 提供哪些服务
+
+  在最底线的情况，你选择的CA至少应该提供CRL( Certificate List)和OCSP(
+  Online Certificate Status Protocol)撤回机制以及对于OCSP服务的性能。
+  CA至少提供域名验证和扩展证书验证功能，最理想的情况可以让你自己选择公
+  钥算法，今天大多站点都使用RSA，但在未来ECDSA的性能优势可能会变得重要。
+
+* 证书管理选项
+
+如果你的运维环境是需要
+
+* 技术支持
+
+选择一个技术支持不错的CA提供商
+
+
+2. 配置
+
+正确的SSL服务器配置才能保证站点的访问者会信任你。
+
+
+2.1 部署有效的证书链
+
+在很多部署场景中，单一的服务器证书显得不足，而多个证书则需要建立一个信
+任链。一个常见的问题是正确的配置了服务器证书但却搞忘了包含其他所需要的
+证书。此外，虽然其他证书通常有很长的有效期，但她们也会过期，如果她们过
+期就会影响整个链条。你的CA应该提供所有额外需要的证书。
+
+一个无效证书链会导致服务器证书失效和客户端浏览器报警告，这个问题有时候
+不是那么容易被检测到，因为有些浏览器可以自己重构一个完整的信任链而有些
+则不行。
+
+2.2 使用安全的协议
+
+在SSL/TLS家族中有5种协议：S SLv2, SSL v3, TLS v1.0, TLS v1.1, TLS v1.2。
+( Shawn注: TLS v1.3还在draft阶段)
+
+* SSL v2不安全，坚决不能用。( Shawn注: OpenSSL和GnuTLS当前的版本
+  (2014.12.2)不支持SSL v2)
+
+* SSL v3老而且过时，她缺乏一些密钥特性，你不应该使用她除非有特别好的理
+  由。( Shawn注: POODLE漏洞的出现彻底的废掉了SSLv3，之前很多地方支持
+  SSLv3的原因是兼容性问题，GnuTLS 3.4中将默认不支持SSLv3)
+
+* TLS v1.0在很大程度上是安全的，至少没有曝光重大的安全漏洞。
+
+* TLS v1.1和TLS v1.2没有著名的安全漏洞曝光。( Shawn注: 由于Edward
+  Snowden曝光的内容有关于NSA“今天记录，明天解密"的故事，所以大量的自由
+  软件社区和暗网使者们在过去1年中转向了TLS v1.2的PFS)
+
+TLS v1.2应该成为你的主要协议。这个版本有巨大的优势是因为她有前面的版本
+没有的特性。如果你的服务器平台不支持TLS v1.2，做个升级计划吧。如果你的
+服务提供商不支持TLS v1.2，要求他们升级。
+
+对于那些老的客户端，你还是需要继续支持TLS v1.0和TLS v1.1。对于临时的解
+决方案，这些协议对于大多WEB站点依然被认为是安全。
+
+
+2.3 使用安全的Ciphersuites( Shawn注：真TM不知道该怎么翻这个词，意思是一堆密码套装，包括密钥交换，加密算法，HMAC等的组合)
+
+要安全的通信，首先得保证你是在和你想要通信的对端在通信。在SSL/TLS里，
+ciphersuites是定义你如何安全通信的。她们由一堆多样化的组件组成。如果其
+中一个组件被发现是不安全的，你应该切换刀其他的ciphersuites上。
+
+你的目标应该是仅使用提供认证和128位加密或者更强的ciphersuites，其他都应该被排除掉：
+
+* Anonymous Diffie-Hellman( ADH)套装不提供认证
+* NULL ciphersuites不提供加密
+* 出口密钥交换套装( Export key exchange suites)使用容易被”日“的认证
+* 使用强度不够的ciphersuites(比如40或者56位的加密强度)也容易被”日“
+* RC4比之前想象的要弱，你应该去除掉，或者计划在未来去掉
+* 3DES仅提供108位的安全(或者112位，看具体情况)，这也低于推荐的最低128位。你应该在未来去除她。
+
+
+2.4 控制Ciphersuite选型
+
+在SSL v3和后来的版本里，客户端请求一个她支持的ciphersuites的列表，服务
+器就从列表中选择一个去跟客户端做协商。不是所有的服务器都能很好处理这个
+过程，一些服务器会选择第一个请求列表中支持的ciphersuite，服务器选择正确
+的ciphersuites对于安全而言是极端重要的。
+
+
+2.5 支持Forward Secrecy
+
+Forward Secrecy是一个协议特性，她能开启一个不依赖于服务器私钥的安全会话。
+不支持Forward Secrecy的ciphersuites，如果攻击者记录了通信内容，那么她可
+以在获得私钥后再解密出来( Shawn注: NSA就在干这件事情，所以看出PFS有多重
+要了吧)。你需要优先支持ECDHE套装，可以以DHE套装作为协商回退
+（ fallback)的备选方案。
+
+2.6 关闭客户端发起的重协商
+
+在SSL/TLS里，重协商允许一方停止交换数据而去重新协商一个安全会话。有一些
+场景需要服务器发起重协商的请求，但客户端并没有发起重协商请求的必要。此
+外，曾经出现过客户端发起重协商请求的拒绝服务攻击( Shawn注解: 每个重协商
+请求服务器的计算量是客户端的15倍)。
+
+2.7 降低已知漏洞风险
+
+没有什么是完全安全的，很多防护方案都会随着时间推移成为安全问题。最佳实
+践是随时关注信息安全的世界在发生些什么然后采取必要的措施。最简单的是你
+应该尽快的打每一个补丁。
+
+下面的一些问题应该引起你的注意：
+
+* 关闭不安全的重协商
+
+  重协商特性在2009年时被发现是不安全的，协议需要更新。今天大部分厂商已
+  经修复，至少提供了一个临时方案。不安全的重协商很危险，因为她很容易被
+  利用。
+
+* 关闭TLS压缩
+  
+  2012年，CRIME攻击[6]向我们展示了TLS压缩所导致的信息泄漏可以被攻击者用
+  于还原部分的敏感数据(比如session cookies)。只有几款客户端支持TLS压缩，
+  所以即使关掉TLS压缩也不会影响刀用户体验。
+
+* 降低HTTP压缩的信息泄漏风险
+  
+  2个CRIME的变种攻击在2013年被曝光，不像CRIME针对TLS压缩，TIME和BREACH
+  漏洞是针对压缩过的HTTP的返回包里。HTTP压缩对于很多公司都很重要，这个
+  问题不容易发现，降低风险的方案可能需要修改业务代码。
+
+对于TIME和BREACH攻击，只要攻击者有足够攻击你的理由，那影响等同于CSRF。
+
+* 关闭RC4
+
+  RC4 cihpersuites已经被认为是不安全而且应该关闭。目前，对于攻击者最好
+  的情况也需要百万次的请求，因此危害是比较低的，我们期待未来有改进的的
+  攻击手法。
+
+* 注意BEAST攻击
+  
+  2011年曝光的BEAST攻击是2004年的一个针对TLS 1.0或者更早版本但当时被认
+  为很难被利用的一个漏洞..............
+
+
+3. 性能
+
+这份文档中安全是主要关注的点，但我们也必须注意刀性能的问题。一个安全服
+务不能满足性能需求无疑会被遗弃掉。然而，因为SSL配置通常不会带来很大的性
+能开销，我们把讨论限定在常见的配置问题上。
+
+
+3.1 不要使用强度过高的私钥
+
+在建立一条安全链接的密钥协商的过程当中最大的开销是由私钥大小决定的，使
+用密钥过短会不安全，使用密钥过长会的导致在一些场景无法忍受的性能下降。
+对于大多的WEB站点，使用超过2048位的密钥是浪费CPU和影响用户体验的。
+
+3.2 确保正确使用Session重用
+
+Session重用是一种性能优化技术，让耗时的密码计算操作在一段时间里可重复使
+用。一个关闭或者没有Session重用机制的场景可能会导致严重性能下降。
+
+3.3 使用持久性链接(HTTP)
+
+今天的很多SSL过度开销并非来自CPU的密码计算操作，而是网络延迟。一个SSL握
+手是建立在TCP握手结束后，她需要更多的交换packet，为了让网络延迟最小化，
+你应该启用HTTP持久化( keep-alives)，她让你的用户能一个TCP链接上发多次
+HTTP请求。
+
+3.4 为公共资源开启缓存(HTTP)
+
+当开始使用SSL通信，浏览器会假设所有的流量都是敏感信息，也会把一些特定的
+资源缓存到内存里，但是一旦你关闭了浏览器，这些内容就丢失了。为了得到性
+能，为一些资源开启长期缓存，通过加入"Cache-Control: public"返回header给
+浏览器标记为公共资源（比如图片）。
+
+4. 应用设计（HTTP）
+
+HTTP协议和WEB相关平台在SSL诞生后仍然在不断的进化。进化的结果就是有一些
+今天包含的特性已经对加密不利。在这个Section里，我们会罗列出这些特性，也
+包括如何安全的使用她们。
+
+4.1 100%的加密你的网站
+
+事实上”加密是一个备选“的思想大概是今天最严重的安全问题之一。我们来看看
+以下问题：
+
+* 网站不需要SSL
+* 网站有SSL但不是强制性的使用
+* 网站混合了SSL和非SSL的内容，有时候甚至在相同的网页上
+* 网站编程错误导致SSL被”日“
+
+如果你知道你自己在做什么的话这些问题是可以有对抗方案的，最直接有效的方
+式是强制所有的内容加密。
+
+
+4.2 避免混合内容
+
+混合内容的页面是使用SSL的前提下但有些内容（比如JavaScript文件，图片，
+CSS）是通过非SSL的方式传输的。这些页面不安全，比如中间人攻击可以劫持这
+些JavaScript的资源和用户session。就算你遵循了前面的建议加密了所有的内容，
+但也不排除来自第三方网站的资源是没有加密的。
+
+4.3 理解第三方站点
+
+网站通常会通过JavaScript代码来使用第三方的服务，Google Analytics是一个
+应用广泛的例子。内含的第三方代码创建了一个隐式的信任链接让第三方可以完
+全控制你的网站。第三方本身可能并没有恶意，但他们很容易成为攻击者的目标。
+原因很简单，如果一个大型第三方提供商被”日“，那攻击者就可以利用这一路径
+去”日“她的使用者。
+
+如果你采纳了Section 4.2的建议，至少你的第三方链接在加密后可以防止中间人
+攻击。此外，你应该进一步去了解你的站点使用了哪些服务，搞明白其中的风险
+你是否愿意承担。
+
+
+4.4 安全Cookies
+.................................
+
+
+4.5 部署HSTS
+.................................
+
+
+4.6 关闭敏感内容的缓存
+
+随着基于云的应用在增加，你必须得区分公开资源和敏感内容。.............
+
+
+4.7 确保没有其他漏洞
+
+SSL不代表就安全，SSL的设计只是涉及安全的一个方面--通信过程中的保密性和
+完整性，但还有其他威胁你必须面对。
+
+
+5. Validation
+...........参数调参和测试，也可以考虑使用在线工具：
+https://www.ssllabs.com/ssltest/
+...........
+
+
+6. 高级议题
+
+下面的这些议题超出了这份文档的范畴，她们需要对SSL/TLS和公钥架构(PKI)有
+更深的理解，这些议题依然是受到争议的。
+
+* Extended Validation证书
+
+  EV证书在签发后进行离线检测是更靠谱的证书。EV证书更难伪造，提供了更好
+  的安全性。
+
+* Public key pinning
+
+  Public key pinning的设计是为网站运维能限制哪些CA才可以为他们的网站签
+  发证书。这个特性是Google开发的，目前已经硬编码到了Chrome浏览器里面，
+  并且证明是有效的。2个proposals:
+
+1, Public Key Pinning Extension for HTTP:
+http://tools.ietf.org/html/draft-ietf-websec-key-pinning
+
+2, Trust Assertions for Certificate Keys
+http://tack.io/draft.html
+
+* ECDSA私钥
+
+  事实上所有的网站都依赖于RSA私钥。这个算法是WEB通信安全的基础。因为一
+  些原因，我们正在从1024位转向2048位的RSA密钥。而增加密钥长度可能会带来
+  性能问题。椭圆曲线密码学(ECC)使用了不同的数学，能在较小的密钥长度下有
+  较强的安全性。RSA密钥可以被ECDSA替代，目前只有少数的CA支持ECDSA，但我
+  们期待未来会有更多。
+
+* OCSP Stapling
+
+  OCSP Stapling是改版的OCSP协议，允许撤回绑定证书自身的信息，直接服务于
+  服务器和浏览器。不用像OCSP必须远程验证失效的证书，这提升了性能。
+
+
+改动
+
+这份文档的最初的版本是在2012年2月24日发布的。这个Section跟踪了文档修改
+的时间，从1.3开始。
+
+Version 1.3 (17 September 2013)
+The following changes were made in this version:
+• Recommend replacing 1024-bit certificates straight away.
+• Recommend against supporting SSL v3.
+• Remove the recommendation to use RC4 to mitigate the BEAST attack server-side.
+• Recommend that RC4 is disabled.
+• Recommend that 3DES is disabled in the near future.
+• Warn about the CRIME attack variations (TIME and BREACH).
+• Recommend supporting Forward Secrecy.
+• Add discussion of ECDSA certificates.
+
+
+感谢
+
+为了有价值的反馈和起草这份文档，特别感谢Marsh Ray (PhoneFactor), Nasko
+Oskov (Google), Adrian F. Dimcev和Ryan Hurst(GlobalSign)。也感谢其他慷
+慨的分享关于信息安全和密码学的人。这份文档虽然是我写的，但这些内容则来
+自整个安全社区。
+
+关于SSL Labs
+.................
+
+关于Qualys
+................
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1] On the Security of RC4 in TLS and WPA (Kenny Paterson et al.; 13 March 2013)
+http://www.isg.rhul.ac.uk/tls/
+
+[2] Deploying Forward Secrecy (Qualys Security Labs; 25 June 2013)
+https://community.qualys.com/blogs/securitylabs/2013/06/25/ssl-labs-deploying-forward-secrecy
+
+[3] Increasing DHE strength on Apache 2.4.x (Ivan Ristić’s blog; 15 August 2013)
+http://blog.ivanristic.com/2013/08/increasing-dhe-strength-on-apache.html
+
+[4] TLS Renegotiation and Denial of Service Attacks (Qualys Security Labs Blog, October 2011)
+https://community.qualys.com/blogs/securitylabs/2011/10/31/tls-renegotiation-and-denial-of-service-attacks
+
+[5] SSL and TLS Authentication Gap Vulnerability Discovered (Qualys Security Labs Blog; November 2009)
+https://community.qualys.com/blogs/securitylabs/2009/11/05/ssl-and-tls-authentication-gap-vulnerability-discovered
+
+[6] CRIME: Information Leakage Attack against SSL/TLS (Qualys Security Labs Blog; September 2012)
+https://community.qualys.com/blogs/securitylabs/2012/09/14/crime-information-leakage-attack-against-ssltls
+
+[7] Defending against the BREACH Attack (Qualys Security Labs; 7 August 2013)
+https://community.qualys.com/blogs/securitylabs/2013/08/07/defending-against-the-breach-attack
+
+[8] Mitigating the BEAST attack on TLS (Qualys Security Labs Blog; October 2011)
+https://community.qualys.com/blogs/securitylabs/2011/10/17/mitigating-the-beast-attack-on-tls
+
+[9] Is BEAST Still a Threat? (Qualys Security Labs; 10 September 2013)
+https://community.qualys.com/blogs/securitylabs/2013/09/10/is-beast-still-a-threat
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
