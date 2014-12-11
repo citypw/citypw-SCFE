@@ -1,0 +1,202 @@
+Shawn the R0ck --- Sept 11 2014
+
+Volatility checklist for GNU/Linux platform:
+
+Process:
+-----------------------------------------------------------------------------
+linux_pslist->linux_pstree->linux_proc_maps( -p pid)
+
+linux_bash_hash -p pid => suspicious binary path( eg. rm /tmp/rm)
+linux_bash_env -p pid => suspicious env path( eg. PATH=/tmp:$PATH)
+
+Network:
+linux_netstat => If it were DOS attack, u might likely see SYN_SENT
+linux_pkt_queues -D output_dir => retrieve inet_socket of each sd
+linux_ifconfig => network interfaces
+linux_list_raw => find which programs are sniffing
+linux_route_cache -R (3.6.x) => route cache and DNS
+linux_arp => ARP cache, to find if none of these MAC addr are valid:
+https://www.wireshark.org/tools/oui-lookup.html
+http://www.macvendorlookup.com/
+-----------------------------------------------------------------------------
+
+
+Kernel memory:
+-----------------------------------------------------------------------------
+limeinfo => mem acquisition range
+linux_iomem => io mapping, grep -i "system ram"
+linux_proc_maps => process mem mappings
+linux_dmesg( 3.5.x) => read struct log ring buffers, suspicious e.g:
+ * "cifs_mount failed w/return code = -13"
+ * "usb 4-4: SerialNumber: 23719051000100F8"
+ * wlan0: MAC addr...blah-blah-blah authentication failed"
+linux_lsmod -P( parameter)/-S( section) => LKM
+linux_moddump -r( name)/-D( directory) => dump LKM into an elf file
+-----------------------------------------------------------------------------
+
+
+File system:
+-----------------------------------------------------------------------------
+linux_mount => mount info, e.g: 
+ * check NFS
+ * exec/noexec flags on /tmp
+ * suid/nosuid flags on /tmp /var/run /home/user/
+linux_enumerate_files => list files
+linux_recover_filesystem => Recovery the metadata of files onto the disk
+linux_dentry_cache => build a timeline, e.g:
+ * "mactime -b body.txt -d -g fsout/etc/group -p fsout/etc/passwd | grep Admin_share"
+linux_find_file -F file_path/-i inode_addr/-O output=> recovery file content
+-----------------------------------------------------------------------------
+
+
+Userland rootkit:
+-----------------------------------------------------------------------------
+linux_malfind => shellcode injection detection
+linux_hollow_process => skape's tech detection
+linux_process_hollow -p pid -b map_addr -P real_binary_path => find hollowing action
+linux_volshell => sim shell, e.g:
+ * cc(pid=?); db( addr by process_hollow, 48); dis( addr_by_*)
+linux_library_list -p pid => list libraries mapped into a process
+linux_ldrmodules -p pid => to detect if dynamic linker were manipulated
+
+How to extract executable from memory:
+ * linux_proc_maps -p pid | grep -i binary
+ * linux_librarydump -p pid -D outdir -b map_addr
+
+How to investigate LD_PRELOAD hooks?
+ * linux_find_file -F /etc/ld.so.preload
+ * linux_find_file -i addr -O ld.so.preload.output => go check which libs were pre-loaded in ld.so.preload.output
+ ** linux_proc_maps | grep -c libs.so* => if found it via above cmd, then check how many times it mapped in various process
+ ** linux_psenv -p pid => check "LD_PRELOAD"
+
+linux_plthook => GOT/PLT hook detection
+linux_apihooks => Inline hook detection
+-----------------------------------------------------------------------------
+
+Kernel rootkit:
+-----------------------------------------------------------------------------
+How to detect a rootkit hide only from modules list not from sysfs?
+ * linux_check_modules => detect KBeast-like rootkit
+ * linux_moddump -b offset -D outdir => dump it onto disk
+ ** linux_hidden_modules
+ ** linux_moddump -D outdir -b offset
+ * linux_check_tty => tty detection
+
+linux_kernel_opened_files => list which files were openned by kernel/LKM
+
+Hidden process detection?
+ * linux_psxview => check "pslist" & "pid_hash"( where threads only exists => linux_threads), "kmem_cache": SLAB=Y, SLUB=N
+
+Elevated priviledges?
+ * linux_check_creds => check whether any share a credentials structure
+ ** linux_check_fop => check which openned files were hijacked
+
+System call handler hooks?
+ * linux_check_syscall -i /usr/include/x86_64-linux-gnu/asm/unistd_32.h, check "HOOKED"
+
+Keyboard notifiers?
+ * linux_keyboard_notifier
+
+AFINFO and netfilter:
+ * linux_check_afinfo => check tcp/udp_seq_afinfo hooked
+ * linux_netfilter => check some hooks
+
+Hidden logged user:
+ * linux_find_file -F "/var/run/utmp"
+ * linux_find_file -i inode_addr -O utmp
+
+Inline hook:
+ * linux_check_inline_kernel, check whether some objects were hooked
+ ** linux_check_fop, use it to compare
+-----------------------------------------------------------------------------
+
+Real-life case:
+
+Kernel tampering detection:
+linux_check_afinfo, linux_check_syscall
+
+Baseline analysis:
+linux_dmesg, diff before & after logs
+linux_pslist, diff before & after logs
+
+Hidden modules:
+linux_hidden_modules
+
+Test case:
+-------------------------------------------------------------------------------------
+Intell RHEL repo on Centos 6.5:
+yum install http://mirror-fpt-telecom.fpt.net/fedora/epel/6/x86_64/epel-release-6-8.noarch.rpm
+yum install -y pip python-crypto.x86_64 libdwarf-tools.x86_64 subversion zip gdb unzip man-pages.noarch man kernel-devel.x86_64 gcc vim
+pip install distorm3 
+
+Debian/Mempo:
+apt-get install dwarfdump python-pip python-crypto zip unzip
+pip install distorm3 
+
+automating generate profiles:
+https://github.com/halpomeranz/lmg
+
+
+Get lime and volatility
+svn checkout http://lime-forensics.googlecode.com/svn/trunk/ lime-forensics-read-only
+svn checkout http://volatility.googlecode.com/svn/trunk/ volatility-read-only
+
+Dump the memory info into our image via lime:
+sudo insmod lime-3.2.0-51-generic.ko "path=../mint15.lim format=lime"
+
+Via network, victim:
+sudo insmode lime.ko "path=tcp:4444 format=lime"
+
+forensics station:
+nc target-ip port > memdump.lime
+
+Getting some information of kernel data structures:
+cd volatility-read-only/tools/linux
+make
+
+Creating our profile:
+cd volatility-read-only
+sudo zip volatility/plugins/overlays/linux/mint15.zip tools/linux/module.dwarf /boot/System.map-3.2.0-51-generic
+
+Locate the addr of history_list:
+shawn@fortress8609 /volatility-read-only $ gdb /bin/bash                
+(gdb) disassemble history_list 
+Dump of assembler code for function history_list:
+   0x00000000004a53f0 <+0>:	mov    0x2490c9(%rip),%rax        # 0x6ee4c0
+   0x00000000004a53f7 <+7>:	retq   
+End of assembler dump.
+
+Analyzing the coredump:
+python vol.py -f ../lime-forensics-read-only/mint15.lim --profile=Linuxmint15x64 plugin_name linux_bash -H 0x6ee4c0
+.................................
+    4478 bash                 2013-09-06 14:04:17 UTC+0000   ssh root@192.168.0.137
+    4478 bash                 2013-09-06 14:04:17 UTC+0000   su
+    4478 bash                 2013-09-06 14:04:17 UTC+0000   cat > log
+    4478 bash                 2013-09-06 14:04:17 UTC+0000   vim log
+    4478 bash                 2013-09-06 14:04:17 UTC+0000    shawn@192.168.0.19
+    4478 bash                 2013-09-06 14:04:17 UTC+0000   cd /info_security/repos/
+    4478 bash                 2013-09-06 14:04:17 UTC+0000   ls
+    4478 bash                 2013-09-06 14:04:17 UTC+0000   cd SUSE/upstream/
+    4478 bash                 2013-09-06 14:04:17 UTC+0000   ls
+    4478 bash                 2013-09-06 14:04:17 UTC+0000   cd gnutls/
+.................................
+
+-------------------------------------------------------------------------------------
+
+The below doesn't work:
+"
+export HISTFILESIZE=0
+export HISTSIZE=0
+unset HISTFILE
+"
+
+So, the security baseline for history_bash shoud be like:
+#Prevent unset of histfile, /etc/profile
+export HISTSIZE=1500
+readonly HISTFILE
+readonly HISTFILESIZE
+readonly HISTSIZE
+
+#Set .bash_history as attr +a( append only)
+find / -maxdepth 3|grep -i bash_history|while read line; do chattr +a
+"$line"; done
