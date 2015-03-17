@@ -1,0 +1,110 @@
+Shawn the R0ck - Mar 17 2015
+
+HIGHRES TIMER can be your DoS nightmare
+
+This is a real-life story about HIGH RESOLUTION TIMER and how lame
+coders use it to make a self-DoS;-) You should be very cautions if
+your system was written by those type of coders.
+
+Incident happened:
+
+1, A dozen of RHEL 6 GNU/Linux servers were extremely slow while
+running some *** applications. The kernel CPU usage was about
+40%--50%.
+
+2, the "free" item from vmstat was not seems OK. "free" was keep
+increasing but "buff" & "cache" were decreasing when a bunch of data
+went through. Then kernel gave you a *hint* about OOM( Out of Memory):
+
+"kernel panic - not syncing: Out of memory and no killable processes..."
+
+Then kernel tried to kill each processes until shit happened, which
+was kernel panic.
+
+I began this investigation with strace. The result was quite
+strange. Why would the application( malware?) invoke the syscall
+nanosleep() so often? Every 10000ns( 10us)? Seriously? All I can tell
+is the application doesn't need to do real time work.
+
+--------------------------------------------------------------
+15:30:08.002047 nanosleep({0, 10000}, NULL) = 0 <0.000082>
+15:30:08.002175 nanosleep({0, 10000}, NULL) = 0 <0.000074>
+15:30:08.002297 nanosleep({0, 10000}, NULL) = 0 <0.000074>
+...
+15:30:09.917557 nanosleep({0, 10000}, NULL) = 0 <0.000075>
+15:30:09.917661 nanosleep({0, 10000}, NULL) = 0 <0.000071>
+--------------------------------------------------------------
+
+The customer said it was never happened in 0ld good GNU/Linux systems(
+like RHEL 5). My guts hints me to a direction: High Resolution
+Timer. A type of kernel timer that can provide more accurate time
+measure. I've read Linux Manual:
+http://man7.org/linux/man-pages/man7/time.7.html
+
+and kernel Doc:
+https://www.kernel.org/doc/Documentation/timers/hrtimers.txt
+
+and learned that HIGHRES TIMER was added to the upstream code in
+2.6.21. So I guess..just guess..some lazy & lame coders just want to
+make the program "sleep" in a very "short" time. Then he/she wrote
+this code very confidently:
+
+usleep(10);
+
+If you're running linux kernel before 2.6.21, this line of code will
+only sleep between 1ms and 2ms. But..annoying *but* is coming..if
+you're running *modern* GNU/Linux distro with HIGHRES support, the
+same code will sleep 10us, which might cause performance hit. CentOS
+community had the similiar issue before:
+
+http://unix.stackexchange.com/questions/37391/high-cpu-usage-with-cfs
+
+From the evidence we have, there are two clues might lead us to the
+crime-scene: High Resolution Timer.
+
+1, nanosleep() has been invoked >=8k times in every fuc*ing second.
+
+2, The victim kernel was not running with kdump. But we still have
+some kernel logs. According to the CallTrace, the kernel was playing
+with HIGHRES-related context should not be a coincidence:
+
+ [<ffffffff810d182e>] ? audit_syscall_exit+0x27e/0x290
+ [<ffffffff8100b2a4>] ? sysret_audit+0x16/0x20
+ [<ffffffff81092ff3>] ? __hrtimer_start_range_ns+0x1a3/0x460
+ [<ffffffff8100b2a4>] ? sysret_audit+0x16/0x20
+ [<ffffffff8100b2a4>] ? sysret_audit+0x16/0x20
+ [<ffffffff810cea0d>] ? audit_filter_rules+0x2d/0xa10
+ [<ffffffff810d182e>] ? audit_syscall_exit+0x27e/0x290
+ [<ffffffff8100b2a4>] ? sysret_audit+0x16/0x20
+schedule_timeout: wrong timeout value ffffffffffffb572
+
+
+Solution:
+
+I'm giving you two options:
+
+1, Modify the source code( if you have) about *sleep*-related
+functions and tell the fuc*ing coders they can go home and fuck
+themselves.
+
+2, Append "nohz=off highres=off" to the file /etc/grub.conf, to turn
+it fuc*ing off this feature.
+
+
+Testing result:
+
+Unfortunately, we had to test this in a production system..but we did
+it.
+
++-----------------------------------------------+
+| Item      | HIGHRES ON          | HIGHRES OFF |
++-----------------------------------------------+
+| nanosleep |   >8,000 times      | 345 times   |
++-----------------------------------------------+
+| buff/cache| Decreasing          | Increasing  |
++-----------------------------------------------+
+| %sys      | 50%                 | 6%          |
++-----------------------------------------------+
+
+Well, I guess we arrested the perpetrator this time.
+
