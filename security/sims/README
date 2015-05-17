@@ -159,7 +159,18 @@ the system logs. Details about technical implementation and little arm race
 between protection and bypassing protection in this area will be explained
 further.
 
-gcc options: -fno-stack-protector, -fstack-protector -fstack-protector-all
+GCC options:
+-fno-stack-protector,  do not add any canary onto any functions
+
+-fstack-protector, only add the canary onto a few functions in compile time 
+
+-fstack-protector-all, add the canary onto all functions, be cautions
+ about this one. It'd be triggered the heavily performance hit.
+
+-fstack-protector-strong, add the canary onto those functions, which
+ the stack buffers would be used. This is a smart one. But its only
+ supported by GCC 4.9.x.
+
 Check the symbols in an elf file: 
 #readelf -s ./a.out | grep stack_chk_fail
      3: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND __stack_chk_fail@GLIBC_2.4 (3)
@@ -185,7 +196,7 @@ shawn@shawn-fortress ~ $ readelf -d a.out | grep BIND_NOW
 
 http://en.wikipedia.org/wiki/Position-independent_code
 
-gcc option: -pie, it only work for sec mitigation when kernel provides ASLR.
+GCC option: -pie, it only work for sec mitigation when kernel enables ASLR.
 
 no PIE:
 shawn@shawn-fortress ~ $ readelf -h a.out | grep "Type:[[:space:]]*EXEC"
