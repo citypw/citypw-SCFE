@@ -1,0 +1,550 @@
+Shawn：事实证明对性能影响很大，在之后的一些年里SEGEXEC用的更多，但
+PAGEXEC让我们明白了初始的PaX feature到底是什么样的一个东东，不了解你
+hacking领域历史的人永远无法去解决未来所要面对的问题，过去的15年里系统安
+全经历了有趣的进化，关于进攻阵营介绍已经够多了（或许我们未来可以花些时
+间聊聊），Aleph One也是名利双收。
+
+在防御的这一方，虽然PaX/Grsecurity对整个内核安全造成了巨大影响和冲击，
+但The PaX team和Spender并未从中赚取哪怕1美分，而PAGEEXEC是
+PaX/Grsecurity的alpha，我们不知道哪个feature会成为omega，但至少我们可以
+借助PaX team的这篇文档对那个0ld g00d h4ck1ng days有一些回顾。
+
+
+原文：PAGEEXEC的最早设计文档
+
+https://pax.grsecurity.net/docs/pageexec.old.txt
+
+作者：The PaX team
+
+译者：Shawn the R0ck
+
+
+0. abstract
+
+这篇文档讨论在IA-32处理器上实现不可执行（比如用户态代码所在的页只有读和
+写的权限，但没有执行的权限）。因为处理器的原生页表和页目录不提供这样的
+功能，所以这个实现有一定的难度。
+
+这个设计的想法是源于Kevin Lawton, Ramon van Handler和其他为plex86项目贡
+献的人（看footnote 1）。
+
+
+1. intro
+
+联网计算机的安全是最近每天都在讨论的议题。很多安全问题都是归结于一种基
+于缓冲区利用的特的攻击技术，这类攻击都依赖于应用程序内部不恰当的数据处
+理（看footnote 2）。
+
+大部分的攻击都是程序错误的数据处理导致执行攻击者的代码（就如程序自己执
+行一样），这个影响允许攻击者去执行任何的操作而应用程序也会允许攻击者的
+代码这么干。
+
+这是一个非常糟糕的事情，必须得想法修复掉。最直观的解决这个问题的方法当
+然是修复现有的漏洞和保证新的代码在设计和实现时的质量（完美程序员模式）。
+
+但是人类总是会犯错，现在已经有几种对抗缓冲区溢出的方法，其中的一个就是
+不可执行的页，这也是能根除原本应该是数据的页但用于执行的可能性（在一个
+典型的缓冲区溢出的场景是数组保存在栈上）。
+
+有一些处理器支持给页标注为只能执行（vs. 数据读/写），但不幸的是IA-32类
+的CPU不支持（Intel, Amd, etc)。
+
+
+2. the idea
+
+1999年7月，plex86(后来的freemware)项目在一些来自互联网用户的帮助下开始
+了针对IA-32处理器的一个特性（一些人认为是一个bug，尽管后来成为了拯救者）
+进行了测试。
+
+这个特性依赖于Pentium处理器和更新的处理器的TLB（translation lookaside
+buffer)是区分数据TLB（DTLB）和指令TLB（ITLB）的。TLBs作为PTEs(page
+table entries，页表条目)的缓存，因此保存着user/supervisor(用户和管理员）
+受访问的权限。通常情况下ITLB和DTLB条目（对于特定的线性/物理地址对）是加
+载于同样的PTE，因此他们包含了一致的状态。
+
+plex86社区想要测试是否能让DTLB和ITLB的条目产生不一样的状态。他们当时有
+兴趣看看在一个只允许代码执行的页上去做数据读写造成的页错误( page
+fault, PF），因为允许类似自修改代码的检测对于虚拟化来说是重要的特性。
+
+然后这个机制可以导致另一种不一致的状态，即只允许读和写，而代码执行是被
+禁止的；这正是对抗基于缓冲区溢出所需要的。
+
+他们的测试被证实是成功的（看footnote 3)
+
+
+3. the theory
+
+PTE和TLB管理是内核内存管理子系统的功能，因此实现不可执行的页必须是改动
+内核本身，这个章节我们将会描述在实现过程中哪些地方需要处理，之后会谈谈
+在Windows NT/2000和Linux内核里的实现，因为Windows的源代码和底层系统相关
+的一些文档并不能以公开的渠道获取，我们将会涉足一些逆向工程（希望微软会
+把这个安全机制在未来的NT系统中加入）。
+
+一个不可执行的页需要在TLB里创建和维护一组特殊的状态，这些状态信息用于表
+示对于特定的页的TLB信息，看下图：
+
+                              ITLB
+
+                               - | S | U
+                              -----------
+                     D     - | 0 | 1 | 2 |
+                     T        -----------
+                     L     S | 3 | 4 | 5 |
+                     B        -----------
+                           U | 6 | 7 | 8 |
+                              -----------
+
+TLB要么没有任何对应线性/物理地址对( - )的条目，要么有一个条目指向用户
+（U）或者管理员（S）的访问权限。
+
+注意，通常情况下状态5和7从来不会发生（他们都是不一致的状态）。
+
+任何页的初始状态都是0，当处理器访问了页（指令fetch或者数据读写操作），
+状态就开始有所变化。一般的可能的状态转换如下面所示：
+
+        0 -> 1 (ITLB fill, PTE specifies Supervisor rights)
+        0 -> 2 (ITLB fill, PTE specifies User rights)
+        3 -> 4 (ITLB fill, PTE specifies Supervisor rights)
+        3 -> 5 (ITLB fill, PTE specifies User rights)      
+        6 -> 7 (ITLB fill, PTE specifies Supervisor rights)
+        6 -> 8 (ITLB fill, PTE specifies User rights)      
+
+        0 -> 3 (DTLB fill, PTE specifies Supervisor rights)
+        0 -> 6 (DTLB fill, PTE specifies User rights)      
+        1 -> 4 (DTLB fill, PTE specifies Supervisor rights)
+        1 -> 7 (DTLB fill, PTE specifies User rights)      
+        2 -> 5 (DTLB fill, PTE specifies Supervisor rights)
+        2 -> 8 (DTLB fill, PTE specifies User rights) 
+
+另外一半可能的状态转换刚好和上面的状态转换方向相反（用于表示冲刷到期的
+TLB条目）以及下面两个：
+
+        4 -> 0 (显式调用TLB flush指令)
+        8 -> 0 (显式调用TLB flush指令)
+
+读到这里，仔细的读者可能已经发现没有在S和U状态之间的直接转换。因为在这
+里我们不讨论直接通过MSRs的方式操作TLB页表的方式。如果内核直接操作TLB条
+目，那么额外的状态转换必须考虑。
+
+有了以上的信息，我们可以定义什么“好”和“坏”的状态以及状态转换了，之后可
+以决定怎么进入和维护仅仅是“好”的状态。
+
+不违反在一个页上“不可执行”的特性时被称为“好”状态，“好”状态如下：
+
+        0,3,6: 由于没有ITLB条目所以无法取指令，所以没有代码可以在这种页
+               上执行
+
+        1,4,7: 用户态代码（一个执行线程的CPL（当前权限）为3）可以在这些
+               页上导致一个页错误，所以内核可以做相应的动作
+
+注意，初始状态（0）是一个“好”状态，我们仅会去保证不会有转换到“坏”状态。
+
+一个好的状态转换是转换到一个”好“状态（坏的状态转换是导致最终转换到了”坏
+“状态），我们的目标是维护一个”好“状态，因此我们想当”坏“状态转换发生时收
+到通知（然后去阻止它）。但并没有办法通过一个TLB条目的冲刷收到通知（过期
+冲刷或者显式调用），我们从现在开始不应该考虑这个问题（除了5 -> 2和8 ->
+2，这2个状态初始时就已经是“坏”状态了“，这种情况尽量在设计时考虑不要让它
+们发生，请看关于paranoid security的footnote）。
+
+“好”的状态转换如下：
+
+
+        0 -> 1
+        3 -> 4
+        6 -> 7
+        0 -> 3
+        0 -> 6
+        1 -> 4
+        1 -> 7
+
+“坏”的状态转换如下：
+
+        0 -> 2
+        3 -> 5
+        6 -> 8
+        2 -> 5
+        2 -> 8
+
+注意，最后2个“坏”状态转换的初始状态就是“坏”的（这种情况在我们的设计里要
+避免）。如何对待它们取决于我们对安全有多被害妄想症结（我们有多信任我们
+的实现，内核完整性等问题）。在接下来的讨论中，我们不会把这2种状态转换纳
+入考虑（因此也不会有针对的防御机制），我们仅会指出它们会影响设计和实现
+的哪些方面。这些问题让我们本质上要做一个性能 vs. (被害妄想症)安全的决定。
+
+现在我们可以把注意力转移到如何检测在用户空间里“坏”状态转换的尝试上，如
+果我们可以让转换时触发处理器中断的正常流程，那应该可以做到检测。达到这
+个目的唯一的途径是在相应的转换时触发一个页错误，每个可能的”坏“状态转换
+大致如下：
+
+     0 -> 2, 3 -> 5, 6 -> 8:
+
+        - 一个PTE（页目录条目）的P( Present)位不设置（PTE.NP）。当任何
+          代码导致ITLB从这个PTE读取时，我们能获得一个页错误。
+
+        - 一个PTE的U/S（User/Supervisor）位设置到S（PTE.S）。当用户态代
+          码导致ITLB从这个PTE读取时，我们能获取到一个页错误。
+
+     2 -> 5, 2 -> 8:
+
+        - 一个PTE（页目录条目）的P( Present)位不设置（PTE.NP）。当任何
+          代码导致ITLB从这个PTE读取时，我们能获得一个页错误。
+
+不论我们如何选择，我们都必须先了解对于不同方式实现”好“状态转换的不同影
+响：
+
+     - PTE.NP方式的状态转换会导致正常情况下不会造成的额外页错误
+
+     - PTE.S会消除掉一些转换，也会造成额外的页错误
+
+下面这个表描述了当被内核态和用户态代码触发时上述选择可以造成的“好”转换：
+
+     trans | choice: PTE.NP          PTE.S
+     ition | mode:   S     U         S     U
+     -------------------------------------------------------------------
+     0 -> 1:         PF    PF        none  PF (transformed from 0 -> 2)
+     3 -> 4:         PF    PF        none  PF (transformed from 3 -> 5)
+     6 -> 7:         PF    PF        none  PF (transformed from 6 -> 8)
+     0 -> 3:         PF    PF        none  PF
+     0 -> 6:         PF    PF        n/a   n/a (transformed into 0 -> 3)
+     1 -> 4:         PF    n/a       none  n/a
+     1 -> 7:         PF    n/a       none  n/a
+
+从这里我们可以看出的确得在性能与安全之间做出决定，如果我们继续选择被害
+妄想症模式，唯一的选择就是PTE.NP，不幸的是这个模式产生更多的页错误会对
+系统的性能有很大的影响，还必须对现有的内核页管理系统进行大规模修改，特
+别是针对基于页文件（swap）的虚拟内存管理的部分，而U/S位通常没有太大性能
+影响。
+
+总结一下这个章节，陈述一个不可执行的页必须实现哪些部分：
+
+3.1. 创建U/S位为S的PTE页。
+
+3.2. 在PTE的生命周期里，保持PTE的U/S位始终设置为S。
+
+3.3. 扩展页错误处理到
+
+     - 当“坏”转换发生时处理页错误（记得有些转换是被某些转换给重定向的）：
+
+
+        0 -> 1:
+        3 -> 4:
+        6 -> 7:
+
+               终止尝试在被标为不可执行的页上执行代码的用户线程，具体的
+               操作可以更细粒度的给人类用户或者其他程序选择的提示，当然
+               不排除有人乐意在繁忙的web服务器上点击yes/no按钮... ;-)
+
+
+      - 当“好”转换发生时处理页错误：
+
+        0 -> 3:
+                
+		正常数据访问页时从状态转换0 -> 6（栈操作，堆访问等）重
+		定向过来的，这必须得保证处理的速度足够快：
+
+                - 为这个页冲刷TLBs（x86指令：invlpg）
+                - 从PTE.S改变为PTE.U
+                - 访问页，以用户权限加载DTLB
+                - 把PTE.U变回PTE.S（按照3.2的要求）
+		- 恢复用户线程
+
+得区分不同的原因导致的页错误，处理程序必须判断错误代码（去判断是否是
+PTE.S或者其他原因导致的页错误）然后对比错误地址（寄存器CR2）和导致错误
+的指令地址（存储在栈上的EIP），然后判断是否一致（“坏”转换尝试）或者不一
+致。
+
+最后一个需要讨论的问题是关于多CPU环境。幸运的是，并没有太多需要担心的。
+只有一种情况多CPU可能是个问题，就是当页错误处理程序尝试以用户权限加载
+DTLB的同一时间段里违反了3.2，如果PTEs是在多CPU间共享的话，我们必须阻止
+其他CPU加载ITLB，这里也有关于带来的性能问题考量：
+
+        - 对于正在处理错误的CPU我们可以切换到一个新的私有页目录和修改或
+          者使用一个私有的PTE拷贝。这个方法会冲刷整个TLBs（劣势），虽然为全局页
+          保持了条目，但并不需要在CPU间进行任何同步操作（优势）。
+
+        - 拖延其他CPU的执行，修改或者使用共享的PTE。这个方法除了对于刻
+          意操作的DTLB条目外不影响TLBs（优势），但需要CPU间的同步操作
+          （劣势）。
+
+        - 不拖延其他CPU去修改或者使用共享的PTE。这种方法除了对于可以操
+          作的DTLB条目外不影响TLBs（优势），也不要求CPU间进行同步（优
+          势），但留了很小的时间窗口可能让PTE加载到不应该加载的处理器的
+          ITLB里（劣势）。
+
+
+4. Linux implementation
+
+虚拟内存管理系统的核心数据结构vm_area_struct在include/linux/mm.h里声明
+的，这个数据结构描述了一个任务的连续（在线性地址空间）页共享的相同的属
+性（可读，可写，可执行，共享/私有，etc）。我们对两个字段有兴趣：
+
+       vm_flags:
+	   决定了页能做的事情范围的flags（读/写/执行），修改后对于当前
+	   任务是否保持私有拷贝（COW激活），或者与其他任务共享到相同的
+	   范围（共享内存），有一些flags对于我们的讨论并不重要（看
+	   footnote 4）
+
+       vm_page_prot:
+	   这些flags是在物理内存被分配到给定的内存范围时实际放进PTE的
+
+从vm_flags到vm_page_prot的转换是被一个被称为protection_map[]的简单数组
+描述，定义在mm/mmap.c文件里。这是与硬件架构无关的分页子系统，但实际的符
+号是使用来自特定架构的包含文件，IA-32是在include/asm-i386/pgtable.h。
+
+在我们的实现里，我们有意打破现有的代码风格去重命名一些常量（有时是增
+加），所以程序员在未来应该显式的声明是否他们需要可执行的内存。
+
+下一步是去扩展页错误处理程序，首先是特定架构本身，对于IA-32是存放在
+arch/i386/mm/fault.c里的do_page_fault()。
+
+页错误可能因为不同的原因被触发，为了加速处理过程IA-32处理器放了一个特殊
+格式的错误代码在栈上作为附加的异常处理程序的栈帧。页错误处理程序跟处理
+器相关的部分根据错误代码和内存范围包含的错误地址的vm_flags来做出决定(当
+然不是所有页错误都发生在映射的内存里，但我们暂时不考虑它们）。
+
+错误代码如下（也请查阅footnote 5）：
+
+     名字           可能性
+     -------------------------------------------------------------------------
+     原因           PTE不是present(PTE.NP)
+
+                    用户空间代码违反权限(PTE.S)
+
+                    尝试写入只读或者COW页(PTE.R)
+
+
+     读或写尝试     错误的指令获取尝试R/W
+ 
+     管理员或者     错误指令在用户模式执行(CPL=3)，或者在管理员模式(CPL=0)
+     用户模式
+
+接下来我们得决定针对不同原因产生错误时处理程序的操作，之后得定义我们的
+方案（PTE.S）怎么去修改他们，下面的表里包含了所有老的和新的处理程序：
+                      
+     legend:
+
+       vm_flags: flags in vm_flags (仅4个最低有效位)
+
+       pte:      针对特定vm_flags的pte里的flags (仅3个最低有效位)
+
+       err:      pte flags的可能错误代码 (仅3个最低有效位)
+
+       action:   sigbus (np): signal task （访问非Present的页)
+                 sigbus (w):  signal task （尝试写只读的页）
+                 cow:         处理 copy-on-write
+                 emu:         模拟PTE.U以及允许访问
+                 emu/kill:    检查访问是否合法(emu)或者不合法(kill)
+
+
+     vm_flags   原始pte错误动作         PaX的pte错误动作
+     ------------------------------------------------------
+     0000       000 xx0 sigbus (np)     000 xx0 sigbus (np)
+     0001       101 x11 sigbus (w)      001 011 sigbus (w)
+                                            111 sigbus (w)
+                                            101 emu/kill
+     0010       101 x11 cow             001 011 cow
+                                            111 cow
+                                            101 emu/kill
+                                        011 111 emu
+     0011       101 x11 cow             001 011 cow
+                                            111 cow
+                                            101 emu/kill
+                                        011 111 emu
+
+     0100       101 x11 sigbus (w)      101 011 sigbus (w)
+     0101       101 x11 sigbus (w)      101 011 sigbus (w)
+     0110       101 x11 cow             101 011 cow
+     0111       101 x11 cow             101 011 cow
+
+     1000       000 xx0 sigbus (np)     000 xx0 sigbus (np)
+     1001       101 x11 sigbus (w)      001 011 sigbus (w)
+                                            111 sigbus (w)
+                                            101 emu/kill
+     1010       111 cannot fault        011 101 emu/kill
+                                            111 emu
+     1011       111 cannot fault        011 101 emu/kill
+                                            111 emu
+
+     1100       101 x11 sigbus (w)      101 011 sigbus (w)
+     1101       101 x11 sigbus (w)      101 011 sigbus (w)
+     1110       111 cannot fault        111 cannot fault
+     1111       111 cannot fault        111 cannot fault
+
+下面的表显示了相同的信息（为PaX），但对于程序员更适合的格式：
+
+     vm_flags| err
+             | 000 001 010 011 100 101 110 111
+     ---------------------------------------------
+     0000      sig     sig     sig     sig
+     0001                  sig     e/k     sig
+     0010                  cow     e/k     cow/emu
+     0011                  cow     e/k     cow/emu
+
+     0100                  sig
+     0101                  sig
+     0110                  cow
+     0111                  cow
+
+     1000      sig     sig     sig     sig
+     1001                  sig     e/k     sig
+     1010                          e/k     emu
+     1011                          e/k     emu
+
+     1100                  sig
+     1101                  sig
+     1110
+     1111
+
+现在我们创建了新的页错误处理程序，让我们多少讨论一下Linux内核相关的问题，
+比如PaX的副作用。首先是当前的可执行的栈（也可以说是被滥用的...）就这样
+被干掉了，我们的改动影响了信号处理（比如return-from-sig-handling代码被
+放到了用户空间的栈）和trampolines(GCC扩展）。
+
+在当前的实现中我们决定只解决之前（可能会有更严重的问题）问题，处理
+trampolines还是留给别人吧（在注重安全的环境中这种代码本来就不应该允许执
+行）。
+  
+幸运的是，这些放在用户模式栈的代码都是固定的长度/内容，因此我们所需要做
+的只是检查代码pattern。一个需要注意的地方是：这些检测尝试去的内存可能在
+页上而非错误的指令，我们用了一个小技巧在代码拷贝到用户态栈（读者被邀请
+去做做数学）之前去改变对齐。
+
+考虑到还有正常的可执行栈的使用，内核可以分配一个（可执行）页然后映射到
+每个任务的地址空间（“浪费”了4kb的内存）。
+
+第2个问题（不算针对Linux）是PaX的性能损耗，我们有坏消息和好消息。其中能
+猜到的是，越大和越高效的TLB会产生越少的页错误。在标准的IA-32处理器上，
+TLBs看起来拥有64到256个条目（看footnote 6），他们至少4-way associative
+（Shawn：暂时翻译成4组相连，如果每组是8个条目那4组是32个条目），或者全
+部关联。这个意思是针对在至少1个TLB条目上的不同的页最多访问256次后必须让
+其过期（打开了一扇通向潜在页错误的未来之门）。下面一个简单的测试程序能
+看出PaX的性能影响。
+
+      #include <stdio.h>
+
+      int main()
+      {
+        char* buf;
+        int i,j;
+
+        buf = (char*)malloc(4096*257);
+        for (j=0; j<100000; j++) {
+          for (i=0; i<257; i++) {
+            buf[i*4096] = 'a';
+          }
+        }
+        return (0);
+      }
+
+在标准的Linux内核2.2.14上和打了PaX补丁的2.2.17内核上的测试结果如下：
+
+   6.20user 0.01system 0:06.21elapsed 100%CPU (0avgtext+0avgdata 0maxresident)k
+   0inputs+0outputs (77major+266minor)pagefaults 0swaps
+
+   6.15user 29.74system 0:35.89elapsed 99%CPU (0avgtext+0avgdata 0maxresident)k
+   0inputs+0outputs (77major+266minor)pagefaults 0swaps
+
+意料之中，PaX内核的额外页错误处理导致了一些性能下降（没有免费午餐）。好
+消息是在真实世界的测试中性能损耗通常小于5--8%.....
+
+
+5. Windows NT/2000 implementation
+
+不辛的是，由于缺乏时间/心情/etc，我们不打算为Windows实现，有兴趣的读者
+可以联系Ice (white_ice@usa.net)或者fOSSiL <fossah@usa.net>去做一些逆向
+工程，设计和实现的工作
+
+给那些打算单干的路标：   
+
+       - 逆向工程工具IDA (the Interactive DisAssembler,
+         http://www.datarescue.com). the next source of information is
+         the symbol files available at the Customer Support
+         Diagnostics page
+         (http://www.microsoft.com/WINDOWS2000/downloads/ Other
+         Downloads section has the link)
+
+       - the following symbols are probably worth a look:
+           - _MmUserProtectionToMask1, _MmUserProtectionToMask2
+           - @KiFlushSingleTb@8, @KeFlushSingleTb@20
+           - @MiDetermineUserGlobalPteMask@4, @MiMakeProtectionMask@4
+           - _MmProtectToPteMask, _MmProtectToValue
+
+       - 实现应该在让内核模式驱动（KMD）在启动时加载，大概也必须做一些
+         运行时的内核patching，这些工作难度不低（想想SMP的场景）
+
+       - 注意PAE和PSE
+
+       - 别信任你最喜欢的调试器，它仅能提供很少关于Windows NT/2000的分
+         析子系统的信息。
+
+
+6. final words
+
+   (to protect the innocent, names have been changed ;-)
+
+       <innocent> well, buffer overflows will be gone in 2-3 years 
+       <innocent> hopefully
+       <pax> sooner ;-)
+       <pax> a month at most
+       <innocent> what ??
+       <innocent> you bullshitting me now or what ?
+       <pax> just sit back and watch ;-)
+       <pax> sure i do
+       <pax> no ;-)
+       <innocent> ok
+       <innocent> phew
+       <innocent> argh
+       <innocent> you got me there for a second ;>
+       <pax> heh, why?
+       <innocent> coz I was in panic that there was something big coming up
+       <innocent> it is already getting harder to find overflows now
+
+   on a more serious note, the PaX team would like to thank acpizer, dezzy
+   and halvar for their support, help and testing the Linux version.
+
+
+7. contact information
+
+   The PaX Team <pageexec@freemail.hu>
+   PGP key fingerprint: D2E0 B4B6 16A3 B532 20B8  969B 956D 2366 39F0 81BF
+
+   for participation in the Windows NT/2000 research/implementation contact
+   Ice <white_ice@usa.net> or fOSSiL <fossah@usa.net>
+
+
+8. history
+
+   2000.08.06 初始文档
+   2000.10.01 PaX的Linux实现诞生
+   2000.10.22 修复一些小错误
+   2000.10.27 增加COW场景
+   2000.10.28 完成Linux实现的描述
+   2000.11.05 修复处理VM_IO，IPC共享内存变成NOEXEC等问题
+   2000.11.16 修复pd/pt访问竞争条件问题
+
+
+9. footnotes
+
+   1. http://www.plex86.org/
+
+   2. depending on where this data originates from (local or a remote host),
+      we talk about local and remote exploits, although the underlying problem
+      remains the same.
+
+   3. http://www.plex86.org/news.phtml?id=3
+
+   4. we found it somewhat unfortunate how VM_STACK_FLAGS was defined. first,
+      its definition was not based on the existing symbolic constants but had
+      the raw hexadecimal value (so a simple 'grep' for 'interesting' symbols
+      would miss it whereas it is of crucial importance for determining the
+      protection flags for stack pages). second, its value included execution
+      permission which is of course exactly what we want to avoid. our patch
+      fixes at least the latter issue (holy lazyness ;-).
+
+   5. for PPro+ processors when CR4.PSE is enabled the error code may also
+      indicate whether the fault occured due to some reserved bits in the
+      paging structures not being 0. in Linux (2.2.x at least) this can never
+      happen, hence its omission.
+
+   6. see links at http://www.sandpile.org/ in the 'impl' section
+
