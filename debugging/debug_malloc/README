@@ -1,0 +1,8 @@
+Shawn the R0ck - Apr 3 2016
+
+Debugging memory leak issues on a production system is just like
+playing on fire. This LD_PRELOAD thing can make your job easier. I
+thought LD_PRELOAD is a security disaster( especially with set*id
+bits) that every audit work I have to take care of it. This crappy
+feature also can be the corner stone of user-space rootkit. Anyway,
+it'd be great to see one good point about it;-)
